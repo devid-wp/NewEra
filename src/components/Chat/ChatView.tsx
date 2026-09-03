@@ -31,7 +31,6 @@ export function ChatView() {
     onChatChunk((c) => {
       if (c.chatId !== activeChatId) return;
       if (c.done) {
-        // commit assistant message
         setMessages((prev) => [
           ...prev,
           {
@@ -54,7 +53,6 @@ export function ChatView() {
   }, [activeChatId]);
 
   const streamingRef = useRef("");
-  // keep ref in sync for commit
   useEffect(() => {
     streamingRef.current = streaming;
   }, [streaming]);
@@ -106,7 +104,7 @@ export function ChatView() {
             <p className="text-sm text-zinc-500">
               System: <span className="text-zinc-400">{activeSpace?.system_prompt}</span>
             </p>
-            <p className="text-xs text-zinc-600">Чат сохраняется в SQLite (изолирован по Space). Стриминг Ollama — в Этапе 3, сейчас мок через Rust.</p>
+            <p className="text-xs text-zinc-500">Chats are stored locally in SQLite and isolated per Space. Ollama streaming will be available in Stage 3 — now mock via Rust.</p>
           </div>
         </div>
       </div>
@@ -122,7 +120,7 @@ export function ChatView() {
             {activeSpace?.icon} {activeSpace?.name} · {activeSpace?.model}
           </span>
         </div>
-        <div className="text-xs text-zinc-600">Stage 2 • SQLite persistent • {messages.length} msgs</div>
+        <div className="text-xs text-zinc-500">{messages.length} messages · SQLite</div>
       </header>
 
       <div className="flex-1 overflow-y-auto">
@@ -164,7 +162,7 @@ export function ChatView() {
                   send();
                 }
               }}
-              placeholder="Напиши сообщение... (Enter — отправить, Shift+Enter — перенос)"
+              placeholder="Type a message... (Enter to send, Shift+Enter for new line)"
               rows={1}
               className="flex-1 bg-transparent resize-none outline-none text-sm placeholder:text-zinc-500 px-3 py-2.5 max-h-32"
             />
@@ -177,8 +175,8 @@ export function ChatView() {
               {isStreaming ? <Square size={16} /> : <Send size={16} />}
             </Button>
           </div>
-          <div className="text-[11px] text-zinc-600 text-center mt-2">
-            NewEra • SQLite ↔ Rust ↔ React • Space: {activeSpace?.name} • Сообщения сохраняются • Ollama Stage 3
+          <div className="text-[11px] text-zinc-500 text-center mt-2">
+            Novera runs locally · Space: {activeSpace?.name} · Messages persisted in SQLite · Ollama Stage 3
           </div>
         </div>
       </div>

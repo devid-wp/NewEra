@@ -44,6 +44,8 @@ pub fn init_db(app: &AppHandle) -> Result<DbState, String> {
 
     run_migrations(&conn)?;
     seed_if_empty(&conn)?;
+    // User requested: keep only Default — clean up legacy seeded spaces
+    cleanup_legacy_spaces(&conn)?;
 
     println!("[db] initialized at {}", path.display());
     Ok(DbState::new(conn))
@@ -112,50 +114,40 @@ fn seed_if_empty(conn: &Connection) -> Result<(), String> {
     }
 
     let now = chrono::Utc::now().to_rfc3339();
-    let seeds = vec![
-        (
+    let id = uuid::Uuid::new_v4().to_string();
+    conn.execute(
+        "INSERT INTO spaces (id, name, icon, system_prompt, model, temperature, provider, created_at, updated_at) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)",
+        params![
+            id,
             "Default",
             "🧠",
             "You are a helpful assistant.",
             "qwen2.5:3b",
-        ),
-        (
-            "Programming",
-            "💻",
-            "You are a senior dev assistant. User likes Python, Linux. Be concise, show code. Current project: NewEra (Tauri + Rust + React).",
-            "qwen2.5:3b",
-        ),
-        (
-            "English",
-            "🇬🇧",
-            "You are an English tutor. Track level, correct gently, teach words. Keep conversation in English.",
-            "qwen2.5:3b",
-        ),
-        (
-            "Linux",
-            "🐧",
-            "You are a Linux/Arch expert. Help with terminal, configs, systemd, pacman.",
-            "qwen2.5:3b",
-        ),
-    ];
+            0.7,
+            "ollama",
+            now,
+            now
+        ],
+    )
+    .map_err(|e| e.to_string())?;
 
-    for (name, icon, prompt, model) in seeds {
-        let id = uuid::Uuid::new_v4().to_string();
-        conn.execute(
-            "INSERT INTO spaces (id, name, icon, system_prompt, model, temperature, provider, created_at, updated_at) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)",
-            params![id, name, icon, prompt, model, 0.7, "ollama", now, now],
-        )
-        .map_err(|e| e.to_string())?;
-    }
-
-    // Seed default settings
     conn.execute(
         "INSERT OR IGNORE INTO settings (key, value) VALUES (?1, ?2)",
         params!["ollama_url", "http://localhost:11434"],
     )
     .map_err(|e| e.to_string())?;
 
-    println!("[db] seeded 4 default spaces");
+    println!("[db] seeded Default space");
+    Ok(())
+}
+
+fn cleanup_legacy_spaces(conn: &Connection) -> Result<(), String> {
+    // Keep only "Default" — remove legacy Programming/English/Linux if they exist
+    let legacy = vec!["Programming", "English", "Linux"];
+    for name in legacy {
+        conn.execute("DELETE FROM spaces WHERE name = ?1", params![name])
+            .map_err(|e| e.to_string())?;
+    }
     Ok(())
 }
 

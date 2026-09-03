@@ -3,6 +3,7 @@ import { api, type Space, type Chat } from "@/api/tauri";
 import { useAppStore } from "@/stores/useAppStore";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { NoveraLogo } from "@/components/Brand/NoveraLogo";
 import { Plus, MessageSquare, Settings, Trash2, Search, X, Check } from "lucide-react";
 
 export function Sidebar() {
@@ -17,7 +18,6 @@ export function Sidebar() {
   const refreshSpaces = async () => {
     const list = await api.listSpaces();
     setSpaces(list);
-    // auto-select first if none selected or selected not in list
     if (list.length > 0) {
       const exists = list.some((s) => s.id === activeSpaceId);
       if (!activeSpaceId || !exists) {
@@ -60,7 +60,7 @@ export function Sidebar() {
 
   const handleDeleteSpace = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm("Удалить Space? Все чаты и память внутри будут удалены.")) return;
+    if (!confirm("Delete Space? All chats and memory inside will be permanently removed.")) return;
     await api.deleteSpace(id);
     const remaining = spaces.filter((s) => s.id !== id);
     setSpaces(remaining);
@@ -71,14 +71,10 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="w-[300px] shrink-0 bg-[#111111] border-r border-zinc-800 flex flex-col h-screen">
-      {/* Header */}
-      <div className="h-[56px] flex items-center justify-between px-4 border-b border-zinc-800/50">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-white text-black grid place-items-center font-bold text-xs">NE</div>
-          <span className="font-semibold tracking-tight">NewEra</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">v0.1</span>
-        </div>
+    <aside className="w-[300px] shrink-0 bg-[#0f0f0f] border-r border-zinc-800 flex flex-col h-screen">
+      {/* Header — Novera branding from provided logo */}
+      <div className="h-[64px] flex items-center justify-between px-4 border-b border-zinc-800/60">
+        <NoveraLogo />
         <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-500">
           <Search size={14} />
         </Button>
@@ -106,17 +102,17 @@ export function Sidebar() {
                 value={newSpaceName}
                 onChange={(e) => setNewSpaceName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleCreateSpace()}
-                placeholder="Название, напр. Games"
+                placeholder="Name, e.g. Research"
                 autoFocus
                 className="flex-1 h-9 px-3 bg-zinc-800 border border-zinc-700 rounded-lg text-sm outline-none focus:border-zinc-600 placeholder:text-zinc-500"
               />
             </div>
             <div className="flex gap-2 justify-end">
               <Button variant="ghost" size="sm" onClick={() => setShowNewSpace(false)} className="gap-1">
-                <X size={12} /> Отмена
+                <X size={12} /> Cancel
               </Button>
               <Button size="sm" onClick={handleCreateSpace} disabled={!newSpaceName.trim()} className="gap-1">
-                <Check size={12} /> Создать
+                <Check size={12} /> Create
               </Button>
             </div>
           </div>
@@ -144,7 +140,7 @@ export function Sidebar() {
               />
             </div>
           ))}
-          {spaces.length === 0 && <div className="text-xs text-zinc-600 py-2">Нет пространств</div>}
+          {spaces.length === 0 && <div className="text-xs text-zinc-600 py-2">No spaces yet</div>}
         </div>
       </div>
 
@@ -170,7 +166,7 @@ export function Sidebar() {
         <div className="flex-1 overflow-y-auto space-y-1 pr-1 -mr-1">
           {chats.length === 0 ? (
             <div className="text-xs text-zinc-600 py-6 text-center">
-              {activeSpaceId ? "Нет чатов — создай первый" : "Выбери Space"}
+              {activeSpaceId ? "No chats yet — create your first one" : "Select a Space"}
             </div>
           ) : (
             chats.map((c: Chat) => (
@@ -189,7 +185,7 @@ export function Sidebar() {
                   className="opacity-0 group-hover:opacity-100 hover:text-red-400 shrink-0"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (!confirm("Удалить чат?")) return;
+                    if (!confirm("Delete this chat?")) return;
                     api.deleteChat(c.id).then(() => {
                       setChats(chats.filter((x) => x.id !== c.id));
                       if (activeChatId === c.id) setActiveChat(null);
