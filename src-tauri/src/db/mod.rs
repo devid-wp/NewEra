@@ -1,0 +1,211 @@
+use rusqlite::{Connection, params};
+use std::path::PathBuf;
+use std::sync::Mutex;
+use tauri::{AppHandle, Manager};
+
+pub struct DbState {
+    pub conn: Mutex<Connection>,
+}
+
+impl DbState {
+    pub fn new(conn: Connection) -> Self {
+        Self {
+            conn: Mutex::new(conn),
+        }
+    }
+}
+
+fn db_path(app: &AppHandle) -> Result<PathBuf, String> {
+    let base = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("app_data_dir error: {}", e))?;
+    // Ensure identifier com.newera.app resolves to .../newera or com.newera.app
+    // Tauri already handles it, we just append newera.db
+    Ok(base.join("newera.db"))
+}
+
+pub fn init_db(app: &AppHandle) -> Result<DbState, String> {
+    let path = db_path(app)?;
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| format!("create dir failed: {}", e))?;
+    }
+
+    let conn = Connection::open(&path).map_err(|e| format!("open db failed: {}", e))?;
+
+    // Enable WAL + foreign keys
+    conn.execute_batch(
+        "
+        PRAGMA journal_mode=WAL;
+        PRAGMA foreign_keys=ON;
+        ",
+    )
+    .map_err(|e| e.to_string())?;
+
+    run_migrations(&conn)?;
+    seed_if_empty(&conn)?;
+
+    println!("[db] initialized at {}", path.display());
+    Ok(DbState::new(conn))
+}
+
+fn run_migrations(conn: &Connection) -> Result<(), String> {
+    conn.execute_batch(
+        "
+        CREATE TABLE IF NOT EXISTS spaces (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL UNIQUE,
+            icon TEXT NOT NULL,
+            system_prompt TEXT NOT NULL,
+            model TEXT NOT NULL DEFAULT 'qwen2.5:3b',
+            temperature REAL NOT NULL DEFAULT 0.7,
+            provider TEXT NOT NULL DEFAULT 'ollama',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS chats (
+            id TEXT PRIMARY KEY,
+            space_id TEXT NOT NULL REFERENCES spaces(id) ON DELETE CASCADE,
+            title TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_chats_space ON chats(space_id, updated_at DESC);
+
+        CREATE TABLE IF NOT EXISTS messages (
+            id TEXT PRIMARY KEY,
+            chat_id TEXT NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
+            role TEXT NOT NULL CHECK(role IN ('user','assistant','system')),
+            content TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_messages_chat ON messages(chat_id, created_at);
+
+        CREATE TABLE IF NOT EXISTS memories (
+            id TEXT PRIMARY KEY,
+            space_id TEXT NOT NULL REFERENCES spaces(id) ON DELETE CASCADE,
+            content TEXT NOT NULL,
+            category TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_memories_space ON memories(space_id);
+
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        );
+        ",
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+fn seed_if_empty(conn: &Connection) -> Result<(), String> {
+    let count: i64 = conn
+        .query_row("SELECT COUNT(*) FROM spaces", [], |r| r.get(0))
+        .map_err(|e| e.to_string())?;
+
+    if count > 0 {
+        return Ok(());
+    }
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let seeds = vec![
+        (
+            "Default",
+            "🧠",
+            "You are a helpful assistant.",
+            "qwen2.5:3b",
+        ),
+        (
+            "Programming",
+            "💻",
+            "You are a senior dev assistant. User likes Python, Linux. Be concise, show code. Current project: NewEra (Tauri + Rust + React).",
+            "qwen2.5:3b",
+        ),
+        (
+            "English",
+            "🇬🇧",
+            "You are an English tutor. Track level, correct gently, teach words. Keep conversation in English.",
+            "qwen2.5:3b",
+        ),
+        (
+            "Linux",
+            "🐧",
+            "You are a Linux/Arch expert. Help with terminal, configs, systemd, pacman.",
+            "qwen2.5:3b",
+        ),
+    ];
+
+    for (name, icon, prompt, model) in seeds {
+        let id = uuid::Uuid::new_v4().to_string();
+        conn.execute(
+            "INSERT INTO spaces (id, name, icon, system_prompt, model, temperature, provider, created_at, updated_at) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9)",
+            params![id, name, icon, prompt, model, 0.7, "ollama", now, now],
+        )
+        .map_err(|e| e.to_string())?;
+    }
+
+    // Seed default settings
+    conn.execute(
+        "INSERT OR IGNORE INTO settings (key, value) VALUES (?1, ?2)",
+        params!["ollama_url", "http://localhost:11434"],
+    )
+    .map_err(|e| e.to_string())?;
+
+    println!("[db] seeded 4 default spaces");
+    Ok(())
+}
+
+// helpers for row mapping
+pub fn map_space(row: &rusqlite::Row) -> rusqlite::Result<crate::models::Space> {
+    Ok(crate::models::Space {
+        id: row.get(0)?,
+        name: row.get(1)?,
+        icon: row.get(2)?,
+        system_prompt: row.get(3)?,
+        model: row.get(4)?,
+        temperature: row.get(5)?,
+        provider: row.get(6)?,
+        created_at: parse_dt(row.get::<_, String>(7)?),
+        updated_at: parse_dt(row.get::<_, String>(8)?),
+    })
+}
+
+pub fn map_chat(row: &rusqlite::Row) -> rusqlite::Result<crate::models::Chat> {
+    Ok(crate::models::Chat {
+        id: row.get(0)?,
+        space_id: row.get(1)?,
+        title: row.get(2)?,
+        created_at: parse_dt(row.get::<_, String>(3)?),
+        updated_at: parse_dt(row.get::<_, String>(4)?),
+    })
+}
+
+pub fn map_message(row: &rusqlite::Row) -> rusqlite::Result<crate::models::Message> {
+    Ok(crate::models::Message {
+        id: row.get(0)?,
+        chat_id: row.get(1)?,
+        role: row.get(2)?,
+        content: row.get(3)?,
+        created_at: parse_dt(row.get::<_, String>(4)?),
+    })
+}
+
+pub fn map_memory(row: &rusqlite::Row) -> rusqlite::Result<crate::models::Memory> {
+    Ok(crate::models::Memory {
+        id: row.get(0)?,
+        space_id: row.get(1)?,
+        content: row.get(2)?,
+        category: row.get(3)?,
+        created_at: parse_dt(row.get::<_, String>(4)?),
+        updated_at: parse_dt(row.get::<_, String>(5)?),
+    })
+}
+
+fn parse_dt(s: String) -> chrono::DateTime<chrono::Utc> {
+    s.parse::<chrono::DateTime<chrono::Utc>>()
+        .unwrap_or_else(|_| chrono::Utc::now())
+}
