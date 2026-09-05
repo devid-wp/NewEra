@@ -4,9 +4,15 @@ import { useAppStore } from "@/stores/useAppStore";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { NoveraLogo } from "@/components/Brand/NoveraLogo";
-import { Plus, MessageSquare, Settings, Trash2, Search, X, Check } from "lucide-react";
+import { Plus, MessageSquare, Settings, Trash2, Search, X, Check, Brain } from "lucide-react";
 
-export function Sidebar() {
+export function Sidebar({
+  onToggleMemories,
+  memoriesOpen,
+}: {
+  onToggleMemories: () => void;
+  memoriesOpen: boolean;
+}) {
   const { spaces, activeSpaceId, chats, activeChatId, setSpaces, setActiveSpace, setChats, setActiveChat } =
     useAppStore();
   const [ollamaOnline, setOllamaOnline] = useState<boolean | null>(null);
@@ -214,6 +220,13 @@ export function Sidebar() {
             <span className="ml-auto text-[11px] text-zinc-500">{dbOnline ? "ready" : "..."}</span>
           </div>
         </div>
+        <Button
+          variant={memoriesOpen ? "default" : "secondary"}
+          className="w-full justify-start gap-2 text-zinc-300"
+          onClick={onToggleMemories}
+        >
+          <Brain size={14} /> Memory
+        </Button>
         <Button variant="secondary" className="w-full justify-start gap-2 text-zinc-300">
           <Settings size={14} /> Settings
         </Button>
