@@ -1,4 +1,5 @@
 use crate::db::DbState;
+use crate::providers::AiProvider;
 use rusqlite::params;
 use serde::{Deserialize, Serialize};
 use tauri::State;
@@ -10,27 +11,38 @@ pub struct HealthStatus {
 }
 
 #[tauri::command]
-pub fn list_models() -> Result<Vec<String>, String> {
-    // Stage 2: still mock, Stage 3 will query Ollama
-    Ok(vec![
-        "qwen2.5:3b".to_string(),
-        "llama3.1:8b".to_string(),
-        "mistral:7b".to_string(),
-    ])
+pub async fn list_models(state: State<'_, DbState>) -> Result<Vec<String>, String> {
+    let ollama_url = get_ollama_url(&state)?;
+    let provider = crate::providers::ollama::OllamaProvider::new(ollama_url);
+    provider.list_models().await
 }
 
 #[tauri::command]
-pub fn health_check(state: State<DbState>) -> Result<HealthStatus, String> {
+pub async fn health_check(state: State<'_, DbState>) -> Result<HealthStatus, String> {
     // db check: try to query
     let db_ok = {
         let conn = state.conn.lock().map_err(|e| e.to_string())?;
         conn.query_row("SELECT 1", [], |_| Ok(1)).is_ok()
     };
-    // ollama check: still false until Stage 3
+    // ollama check via real provider
+    let ollama_url = get_ollama_url(&state)?;
+    let provider = crate::providers::ollama::OllamaProvider::new(ollama_url);
+    let ollama_ok = provider.health().await;
     Ok(HealthStatus {
-        ollama: false,
+        ollama: ollama_ok,
         db: db_ok,
     })
+}
+
+fn get_ollama_url(state: &State<'_, DbState>) -> Result<String, String> {
+    let conn = state.conn.lock().map_err(|e| e.to_string())?;
+    Ok(conn
+        .query_row(
+            "SELECT value FROM settings WHERE key = 'ollama_url'",
+            [],
+            |r| r.get::<_, String>(0),
+        )
+        .unwrap_or_else(|_| "http://localhost:11434".to_string()))
 }
 
 #[tauri::command]
