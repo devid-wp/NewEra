@@ -123,3 +123,21 @@ pub fn insert_message(conn: &rusqlite::Connection, msg: &Message) -> Result<(), 
     .map_err(|e| e.to_string())?;
     Ok(())
 }
+
+#[tauri::command]
+pub fn set_chat_title(state: State<'_, DbState>, chat_id: String, title: String) -> Result<(), String> {
+    if title.trim().is_empty() {
+        return Err("Title cannot be empty".to_string());
+    }
+    let conn = state.conn.lock().map_err(|e| e.to_string())?;
+    let affected = conn
+        .execute(
+            "UPDATE chats SET title = ?1 WHERE id = ?2",
+            params![title.trim(), chat_id],
+        )
+        .map_err(|e| e.to_string())?;
+    if affected == 0 {
+        return Err("Chat not found".to_string());
+    }
+    Ok(())
+}

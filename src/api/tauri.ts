@@ -42,7 +42,7 @@ export const api = {
   listSpaces: () => invoke<Space[]>("list_spaces"),
   createSpace: (payload: { name: string; icon?: string; system_prompt?: string; model?: string; temperature?: number }) =>
     invoke<Space>("create_space", { payload }),
-  updateSpace: (id: string, payload: { name?: string; icon?: string; system_prompt?: string; model?: string }) =>
+  updateSpace: (id: string, payload: { name?: string; icon?: string; system_prompt?: string; model?: string; temperature?: number }) =>
     invoke<Space>("update_space", { id, payload }),
   deleteSpace: (id: string) => invoke<void>("delete_space", { id }),
 
@@ -65,6 +65,7 @@ export const api = {
   healthCheck: () => invoke<{ ollama: boolean; db: boolean }>("health_check"),
   getSettings: () => invoke<Record<string, string>>("get_settings"),
   setSettings: (key: string, value: string) => invoke<void>("set_settings", { key, value }),
+  setChatTitle: (chatId: string, title: string) => invoke<void>("set_chat_title", { chatId, title }),
 };
 
 export type ChatChunk = { chatId: string; delta: string; done: boolean };

@@ -74,6 +74,10 @@ export function ChatView() {
     setStreaming("");
     streamingRef.current = "";
     await api.sendMessage(activeSpaceId, activeChatId, text);
+    // Set chat title from first message (new chat only)
+    if (messages.length === 1) {
+      await api.setChatTitle(activeChatId, text);
+    }
   };
 
   if (!activeSpaceId) {

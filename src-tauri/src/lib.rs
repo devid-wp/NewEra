@@ -32,6 +32,7 @@ pub fn run() {
             chats::delete_chat,
             chats::rename_chat,
             chats::list_messages,
+            chats::set_chat_title,
             // chat streaming
             chat_stream::send_message,
             chat_stream::abort_generation,
