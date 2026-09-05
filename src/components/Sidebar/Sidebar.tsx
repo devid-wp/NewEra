@@ -9,9 +9,11 @@ import { Plus, MessageSquare, Settings, Trash2, Search, X, Check, Brain } from "
 export function Sidebar({
   onToggleMemories,
   memoriesOpen,
+  onOpenSettings,
 }: {
   onToggleMemories: () => void;
   memoriesOpen: boolean;
+  onOpenSettings: () => void;
 }) {
   const { spaces, activeSpaceId, chats, activeChatId, setSpaces, setActiveSpace, setChats, setActiveChat } =
     useAppStore();
@@ -227,7 +229,7 @@ export function Sidebar({
         >
           <Brain size={14} /> Memory
         </Button>
-        <Button variant="secondary" className="w-full justify-start gap-2 text-zinc-300">
+        <Button variant="secondary" className="w-full justify-start gap-2 text-zinc-300" onClick={onOpenSettings}>
           <Settings size={14} /> Settings
         </Button>
       </div>
