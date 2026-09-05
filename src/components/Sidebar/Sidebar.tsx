@@ -17,6 +17,10 @@ export function Sidebar({
 }) {
   const { spaces, activeSpaceId, chats, activeChatId, setSpaces, setActiveSpace, setChats, setActiveChat } =
     useAppStore();
+  const [searchQuery, setSearchQuery] = useState("");
+  const filteredChats = searchQuery
+    ? chats.filter((c) => c.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    : chats;
   const [ollamaOnline, setOllamaOnline] = useState<boolean | null>(null);
   const [dbOnline, setDbOnline] = useState<boolean | null>(null);
   const [showNewSpace, setShowNewSpace] = useState(false);
@@ -154,9 +158,18 @@ export function Sidebar({
 
       {/* Chats */}
       <div className="flex-1 flex flex-col min-h-0 px-3 pt-2">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] font-semibold tracking-widest text-zinc-500">CHATS</span>
-          <Button
+<div className="flex items-center gap-2">
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search chats..."
+                className="flex-1 h-9 px-3 bg-zinc-900 border border-zinc-700 rounded-lg text-sm outline-none focus:border-zinc-500 placeholder:text-zinc-600"
+                maxLength={50}
+              />
+            </div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-semibold tracking-widest text-zinc-500">CHATS</span>
+              <Button
             variant="ghost"
             size="sm"
             className="h-6 text-xs gap-1"
@@ -177,7 +190,7 @@ export function Sidebar({
               {activeSpaceId ? "No chats yet — create your first one" : "Select a Space"}
             </div>
           ) : (
-            chats.map((c: Chat) => (
+            filteredChats.map((c: Chat) => (
               <button
                 key={c.id}
                 onClick={() => setActiveChat(c.id)}
