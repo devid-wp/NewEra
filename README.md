@@ -2,18 +2,26 @@
 
 > Красивый desktop-клиент для локальных моделей через Ollama. Главная фишка — **Memory Spaces**.
 
-![Stage](https://img.shields.io/badge/stage-2_sqlite-green) ![Tauri](https://img.shields.io/badge/Tauri-2-blue) ![React](https://img.shields.io/badge/React-19-61dafb)
+![Stage](https://img.shields.io/badge/stage-3_ollama_streaming-green) ![Tauri](https://img.shields.io/badge/Tauri-2-blue) ![React](https://img.shields.io/badge/React-19-61dafb)
 
 ## Этап 1 — Скелет ✅
 - Tauri 2 + React + TS + Tailwind + Rust Core + IPC mock
 - Проверено: `npm run build` ✅ `cargo check` ✅
 
-## Этап 2 — SQLite ✅ (текущий)
+## Этап 2 — SQLite ✅
 - `rusqlite 0.32 bundled` + WAL + FK, миграции `ARCHITECTURE.md:5` → `spaces/chats/messages/memories/settings`
 - `src-tauri/src/db/mod.rs:13` — path `app_data_dir()/newera.db`, сиды 4 Spaces
 - Rust CRUD: `spaces.rs:7`, `chats.rs:7`, `memory.rs:7`, `chat_stream.rs:13` (user+assistant persist)
 - Frontend: auto-select Space, создание/удаление Spaces/Chats, `Sidebar.tsx:18` + индикатор DB
 - Проверено: `npm run build` ✅ `cargo check` ✅ данные переживают рестарт
+
+## Этап 3 — Ollama Streaming ✅ (текущий)
+- `OllamaProvider` (`providers/ollama.rs`) — реальный `GET /api/tags` + `POST /api/chat` (NDJSON, `stream:true`)
+- `send_message` (`chat_stream.rs`) собирает промпт через `prompt.rs` и стримит `chat:chunk` в UI, по завершению пишет ассистента в SQLite
+- `abort_generation` — отмена по `chat_id` через `AbortRegistry` (AtomicBool)
+- `list_models` / `health_check` — реальные запросы к Ollama
+- Frontend: markdown-рендеринг (`MessageBubble.tsx`), стриминг-пузырь, кнопка Stop
+- Проверено: `npm run build` ✅ `cargo check` ✅
 
 ```bash
 npm install
@@ -27,7 +35,7 @@ ollama serve & ollama pull qwen2.5:3b
 
 ## Следующий этап
 
-**Этап 3 — Ollama Streaming** — реальный `POST /api/chat` + `prompt.rs` + SSE `chat:chunk`
+**Этап 4 — Memory** — UI `MemoryEditor`, инъекция фактов в промпт, изоляция по Space
 
 ## Scripts
 

@@ -1,24 +1,16 @@
 # ROADMAP — NewEra (Tauri Desktop)
 
-## Этап 1 — Скелет (День 1) — NEXT
-- [ ] Tauri 2 + React + TS + Tailwind + shadcn
-- [ ] Rust lib.rs + пустые IPC команды
-- [ ] Layout Sidebar + ChatView (мок)
-- **Done:** `cargo tauri dev` открывает темное окно
+## Этап 1 — Скелет ✅
+## Этап 2 — Данные ✅
 
-## Этап 2 — Данные (День 2-4)
-- [ ] SQLite (rusqlite/tauri-plugin-sql) + миграции
-- [ ] Spaces/Chats/Messages CRUD via IPC
-- [ ] Zustand + UI переключение Spaces
-- **Done:** данные сохраняются, изоляция Space работает
+## Этап 3 — AI Streaming (День 5-7) ✅
+- [x] providers/ollama.rs (reqwest stream)
+- [x] services/prompt.rs (system + memories + history)
+- [x] send_message + emit(chat:chunk) + markdown
+- [x] abort_generation
+- **Done:** живой чат с qwen2.5:3b, стриминг, markdown
 
-## Этап 3 — AI Streaming (День 5-7)
-- [ ] providers/ollama.rs (reqwest stream)
-- [ ] services/prompt.rs (system + memories + history)
-- [ ] send_message + emit(chat:chunk) + markdown
-- **Done:** живой чат с qwen2.5:3b, стриминг
-
-## Этап 4 — Memory (День 8-9)
+## Этап 4 — Memory (День 8-9) ← NEXT
 - [ ] memories table + CRUD
 - [ ] inject в промпт
 - [ ] MemoryEditor UI
