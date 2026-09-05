@@ -10,13 +10,13 @@
 - [x] abort_generation
 - **Done:** живой чат с qwen2.5:3b, стриминг, markdown
 
-## Этап 4 — Memory (День 8-9) ← NEXT
-- [ ] memories table + CRUD
-- [ ] inject в промпт
-- [ ] MemoryEditor UI
+## Этап 4 — Memory (День 8-9) ✅
+- [x] memories table + CRUD
+- [x] inject в промпт
+- [x] MemoryEditor UI
 - **Done:** память изолирована по Space
 
-## Этап 5 — Polish (День 10-11)
+## Этап 5 — Polish (День 10-11) ← NEXT
 - [ ] Settings (модель/temperature/ollama_url/theme)
 - [ ] Авто-титул, поиск, экспорт .md, оффлайн баннер, хоткеи
 - **Done:** daily-driver готов
