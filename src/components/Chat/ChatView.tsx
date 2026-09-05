@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { api, onChatChunk, type Message } from "@/api/tauri";
 import { useAppStore } from "@/stores/useAppStore";
 import { Button } from "@/components/ui/button";
+import { MessageBubble } from "@/components/Chat/MessageBubble";
 import { Send, Square, Cpu, Sparkles } from "lucide-react";
 
 export function ChatView() {
@@ -104,7 +105,7 @@ export function ChatView() {
             <p className="text-sm text-zinc-500">
               System: <span className="text-zinc-400">{activeSpace?.system_prompt}</span>
             </p>
-            <p className="text-xs text-zinc-500">Chats are stored locally in SQLite and isolated per Space. Ollama streaming will be available in Stage 3 — now mock via Rust.</p>
+            <p className="text-xs text-zinc-500">Chats are stored locally in SQLite and isolated per Space.</p>
           </div>
         </div>
       </div>
@@ -126,25 +127,10 @@ export function ChatView() {
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto w-full px-6 py-8 space-y-6">
           {messages.map((m) => (
-            <div key={m.id} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
-              <div
-                className={
-                  m.role === "user"
-                    ? "max-w-[80%] bg-white text-black rounded-2xl rounded-br-sm px-4 py-3 text-sm leading-relaxed"
-                    : "max-w-[85%] bg-zinc-900 border border-zinc-800 rounded-2xl rounded-bl-sm px-4 py-3 text-sm leading-relaxed text-zinc-100"
-                }
-              >
-                <div className="whitespace-pre-wrap break-words">{m.content}</div>
-              </div>
-            </div>
+            <MessageBubble key={m.id} role={m.role} content={m.content} />
           ))}
           {isStreaming && (
-            <div className="flex justify-start">
-              <div className="max-w-[85%] bg-zinc-900 border border-zinc-800 rounded-2xl rounded-bl-sm px-4 py-3 text-sm text-zinc-100">
-                <span className="whitespace-pre-wrap break-words">{streaming || "▊"}</span>
-                <span className="inline-block w-2 h-4 bg-zinc-500 ml-1 animate-pulse align-middle" />
-              </div>
-            </div>
+            <MessageBubble role="assistant" content={streaming || "…"} streaming />
           )}
           <div ref={bottomRef} />
         </div>
@@ -169,14 +155,21 @@ export function ChatView() {
             <Button
               size="icon"
               className="shrink-0 h-9 w-9 rounded-xl"
-              onClick={send}
-              disabled={!input.trim() || isStreaming}
+              onClick={() => {
+                if (isStreaming) {
+                  api.abortGeneration(activeChatId);
+                  setIsStreaming(false);
+                } else {
+                  send();
+                }
+              }}
+              disabled={!input.trim() && !isStreaming}
             >
               {isStreaming ? <Square size={16} /> : <Send size={16} />}
             </Button>
           </div>
           <div className="text-[11px] text-zinc-500 text-center mt-2">
-            Novera runs locally · Space: {activeSpace?.name} · Messages persisted in SQLite · Ollama Stage 3
+            Novera runs locally · Space: {activeSpace?.name} · Streamed via Ollama
           </div>
         </div>
       </div>
