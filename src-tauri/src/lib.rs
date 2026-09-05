@@ -17,6 +17,7 @@ pub fn run() {
                 Box::new(std::io::Error::new(std::io::ErrorKind::Other, e))
             })?;
             app.manage(db);
+            app.manage(chat_stream::AbortRegistry::default());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
