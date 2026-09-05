@@ -141,3 +141,34 @@ pub fn set_chat_title(state: State<'_, DbState>, chat_id: String, title: String)
     }
     Ok(())
 }
+
+#[tauri::command]
+pub fn export_chat(state: State<'_, DbState>, chat_id: String) -> Result<String, String> {
+    let conn = state.conn.lock().map_err(|e| e.to_string())?;
+    let chat = conn
+        .query_row(
+            "SELECT id, space_id, title, created_at, updated_at FROM chats WHERE id = ?1",
+            params![chat_id],
+            map_chat,
+        )
+        .map_err(|e| e.to_string())?;
+    let mut stmt = conn
+        .prepare(
+            "SELECT role, content FROM messages WHERE chat_id = ?1 ORDER BY created_at ASC",
+        )
+        .map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map(params![chat_id], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+        .map_err(|e| e.to_string())?;
+    let messages: Vec<(String, String)> = rows
+        .collect::<Result<Vec<(String, String)>, _>>()
+        .map_err(|e| e.to_string())?;
+
+    let title = if chat.title.trim().is_empty() { "Chat" } else { &chat.title };
+    let mut md = format!("# {}\n\n", title);
+    for (role, content) in &messages {
+        let role_emoji = if role == "user" { "👤" } else { "🤖" };
+        md.push_str(&format!("**{}:** {}\n\n", role_emoji, content));
+    }
+    Ok(md)
+}

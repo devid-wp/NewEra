@@ -3,7 +3,7 @@ import { api, onChatChunk, type Message } from "@/api/tauri";
 import { useAppStore } from "@/stores/useAppStore";
 import { Button } from "@/components/ui/button";
 import { MessageBubble } from "@/components/Chat/MessageBubble";
-import { Send, Square, Cpu, Sparkles } from "lucide-react";
+import { Send, Square, Cpu, Sparkles, Download } from "lucide-react";
 
 export function ChatView() {
   const { activeSpaceId, activeChatId, spaces } = useAppStore();
@@ -11,6 +11,8 @@ export function ChatView() {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+    const [showExport, setShowExport] = useState(false);
+    const exportMd = "";
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const activeSpace = spaces.find((s) => s.id === activeSpaceId);
@@ -125,7 +127,33 @@ export function ChatView() {
             {activeSpace?.icon} {activeSpace?.name} · {activeSpace?.model}
           </span>
         </div>
-        <div className="text-xs text-zinc-500">{messages.length} messages · SQLite</div>
+        <div className="flex items-center gap-2 text-xs text-zinc-500">
+              {messages.length} messages · SQLite
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowExport(true)}
+                title="Export chat"
+              >
+      {showExport && (
+        <div className="fixed inset-0 z-10 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 max-w-lg w-full">
+            <h3 className="text-lg font-semibold mb-4">Export Chat</h3>
+            <textarea
+              rows={10}
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-sm monospace outline-none resize-none"
+              onFocus={(e) => e.target.select()}
+            >{exportMd}</textarea>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setShowExport(false)}>Close</Button>
+              <Button onClick={() => setShowExport(false)}>Copy</Button>
+            </div>
+          </div>
+        </div>
+      )}
+                <Download size={12} />
+              </Button>
+            </div>
       </header>
 
       <div className="flex-1 overflow-y-auto">

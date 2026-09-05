@@ -66,6 +66,7 @@ export const api = {
   getSettings: () => invoke<Record<string, string>>("get_settings"),
   setSettings: (key: string, value: string) => invoke<void>("set_settings", { key, value }),
   setChatTitle: (chatId: string, title: string) => invoke<void>("set_chat_title", { chatId, title }),
+  exportChat: (chatId: string) => invoke<string>("export_chat", { chatId }),
 };
 
 export type ChatChunk = { chatId: string; delta: string; done: boolean };
