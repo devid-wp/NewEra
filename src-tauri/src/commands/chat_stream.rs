@@ -147,6 +147,26 @@ pub async fn send_message(
         num_ctx: Some(4096),
     };
 
+    // Save a placeholder assistant message BEFORE streaming starts.
+    // This ensures the message exists in SQLite even if the app closes mid-stream.
+    let assistant_msg_id = {
+        let conn = state.conn.lock().map_err(|e| e.to_string())?;
+        let assistant_id = Uuid::new_v4().to_string();
+        let now = Utc::now();
+        conn.execute(
+            "INSERT INTO messages (id, chat_id, role, content, created_at) VALUES (?1,?2,?3,?4,?5)",
+            params![
+                assistant_id,
+                chat_id,
+                "assistant",
+                "",
+                now.to_rfc3339()
+            ],
+        )
+        .map_err(|e| format!("Failed to create assistant placeholder: {}", e))?;
+        assistant_id
+    };
+
     let abort_flag = Arc::new(AtomicBool::new(false));
     app.state::<AbortRegistry>().register(&chat_id, abort_flag.clone());
 
@@ -171,36 +191,35 @@ pub async fn send_message(
             );
         };
 
-        let result = provider.chat_stream(&model, questions, options, Box::new(on_chunk)).await;
+        let result = provider.chat_stream(&model, questions, options, Box::new(on_chunk), Some(abort_flag)).await;
         let full_text = full.lock().map(|g| g.clone()).unwrap_or_default();
         app.state::<AbortRegistry>().take(&chat_id);
 
         match result {
             Ok(_) => {
+                // UPDATE the placeholder with the real response content
                 if let Some(db_state) = app_clone.try_state::<DbState>() {
-                    if let Ok(conn) = db_state.conn.lock() {
-                        let assistant_msg = Message {
-                            id: Uuid::new_v4().to_string(),
-                            chat_id: chat_id.clone(),
-                            role: "assistant".to_string(),
-                            content: full_text.clone(),
-                            created_at: Utc::now(),
-                        };
-                        let _ = conn.execute(
-                            "INSERT INTO messages (id, chat_id, role, content, created_at) VALUES (?1,?2,?3,?4,?5)",
-                            params![
-                                assistant_msg.id,
-                                assistant_msg.chat_id,
-                                assistant_msg.role,
-                                assistant_msg.content,
-                                assistant_msg.created_at.to_rfc3339()
-                            ],
-                        );
-                        let _ = conn.execute(
-                            "UPDATE chats SET updated_at = ?1 WHERE id = ?2",
-                            params![assistant_msg.created_at.to_rfc3339(), chat_id],
-                        );
+                    match db_state.conn.lock() {
+                        Ok(conn) => {
+                            if let Err(e) = conn.execute(
+                                "UPDATE messages SET content = ?1 WHERE id = ?2",
+                                params![full_text, assistant_msg_id],
+                            ) {
+                                eprintln!("[chat] FAILED to update assistant message content: {}", e);
+                            }
+                            if let Err(e) = conn.execute(
+                                "UPDATE chats SET updated_at = ?1 WHERE id = ?2",
+                                params![Utc::now().to_rfc3339(), chat_id],
+                            ) {
+                                eprintln!("[chat] FAILED to update chat timestamp: {}", e);
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("[chat] FAILED to lock DB for assistant message: {}", e);
+                        }
                     }
+                } else {
+                    eprintln!("[chat] DbState not found — assistant message NOT updated");
                 }
                 let _ = app_clone.emit(
                     "chat:chunk",
@@ -208,6 +227,15 @@ pub async fn send_message(
                 );
             }
             Err(e) => {
+                // Update placeholder with error so it's not left empty
+                if let Some(db_state) = app_clone.try_state::<DbState>() {
+                    if let Ok(conn) = db_state.conn.lock() {
+                        let _ = conn.execute(
+                            "UPDATE messages SET content = ?1 WHERE id = ?2",
+                            params![format!("[Error: {}]", e), assistant_msg_id],
+                        );
+                    }
+                }
                 let _ = app_clone.emit(
                     "chat:error",
                     serde_json::json!({ "chatId": chat_id, "error": e }),
