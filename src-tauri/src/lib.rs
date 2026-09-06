@@ -45,7 +45,11 @@ pub fn run() {
             settings::list_models,
             settings::health_check,
             settings::get_settings,
-            settings::set_settings
+            settings::set_settings,
+            settings::check_ollama_status,
+            settings::start_ollama,
+            settings::install_model,
+            settings::check_model_exists
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
