@@ -50,6 +50,64 @@ Architecture: see [ARCHITECTURE.md](ARCHITECTURE.md) v0.2 + [ROADMAP.md](ROADMAP
 
 **Stage 6 — Build** — Tauri bundler, icons, packaging, README
 
+## Deployment
+
+### Build artifacts location
+
+Production build outputs are generated in `src-tauri/target/release/`:
+
+- **Binary**: `src-tauri/target/release/newera`
+- **.deb package**: `src-tauri/target/release/bundle/deb/Novera_0.1.0_amd64.deb`
+- **.rpm package**: `src-tauri/target/release/bundle/rpm/Novera-0.1.0-1.x86_64.rpm`
+- **.AppImage**: `src-tauri/target/release/bundle/appimage/Novera_0.1.0_amd64.AppImage` (requires `cargo tauri build` with `linuxdeploy` dependencies, or use the `AppDir`-based bundle)
+
+### Installing/running the .deb package
+
+```bash
+sudo dpkg -i src-tauri/target/release/bundle/deb/Novera_0.1.0_amd64.deb
+# If missing dependencies:
+sudo apt-get install -f
+# Then launch:
+newera
+```
+
+### Running the AppImage
+
+```bash
+chmod +x src-tauri/target/release/bundle/appimage/Novera_0.1.0_amd64.AppImage
+./src-tauri/target/release/bundle/appimage/Novera_0.1.0_amd64.AppImage
+```
+
+### Running the Windows .exe
+
+The Windows executable is generated via `cargo tauri build` on a Windows system.
+Place the resulting `.exe` in the `src-tauri/target/release/bundle/window` directory
+and run it double-clicking or from the command line.
+
+> **Note**: Windows packaging and verification requires a Windows host.
+Current CI/linux environment cannot produce or test `.exe` runtime behavior.
+
+### Building from source
+
+```bash
+# 1. Install dependencies (Linux/Debian example):
+# sudo pacman -S webkit2gtk base-devel curl wget file openssl appmenu-gtk-module libappindicator-gtk3 librsvg
+# sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+
+# 2. Install Node.js dependencies:
+npm install
+
+# 3. Start Ollama and pull a model:
+ollama serve
+ollama pull qwen2.5:3b
+
+# 4. Start development mode:
+cargo tauri dev
+
+# 5. Produce release artifacts:
+cargo tauri build
+```
+
 ## Scripts
 
 - `npm run dev` — only frontend (Vite 1420)
