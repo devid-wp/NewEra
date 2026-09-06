@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { api, type Space, type Chat } from "@/api/tauri";
 import { useAppStore } from "@/stores/useAppStore";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { NoveraLogo } from "@/components/Brand/NoveraLogo";
-import { Plus, MessageSquare, Settings, Trash2, Search, X, Check, Brain } from "lucide-react";
+import { Plus, MessageSquare, Settings, Trash2, Search, X, Check, Brain, Pencil } from "lucide-react";
 
 export function Sidebar({
   onToggleMemories,
@@ -26,6 +26,9 @@ export function Sidebar({
   const [showNewSpace, setShowNewSpace] = useState(false);
   const [newSpaceName, setNewSpaceName] = useState("");
   const [newSpaceIcon, setNewSpaceIcon] = useState("🧠");
+  const [renamingChatId, setRenamingChatId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const renameInputRef = useRef<HTMLInputElement>(null);
 
   const refreshSpaces = async () => {
     const list = await api.listSpaces();
@@ -80,6 +83,35 @@ export function Sidebar({
       setActiveSpace(remaining[0]?.id ?? null);
       setChats([]);
     }
+  };
+
+  const startRename = (chat: Chat, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRenamingChatId(chat.id);
+    setRenameValue(chat.title);
+    setTimeout(() => renameInputRef.current?.focus(), 0);
+  };
+
+  const commitRename = async () => {
+    if (!renamingChatId) return;
+    const trimmed = renameValue.trim();
+    if (!trimmed) {
+      setRenamingChatId(null);
+      return;
+    }
+    const chatId = renamingChatId;
+    setRenamingChatId(null);
+    setChats(chats.map((c) => (c.id === chatId ? { ...c, title: trimmed } : c)));
+    try {
+      await api.setChatTitle(chatId, trimmed);
+    } catch (err) {
+      console.error("Failed to rename chat:", err);
+    }
+  };
+
+  const cancelRename = () => {
+    setRenamingChatId(null);
+    setRenameValue("");
   };
 
   return (
@@ -191,29 +223,53 @@ export function Sidebar({
             </div>
           ) : (
             filteredChats.map((c: Chat) => (
-              <button
-                key={c.id}
-                onClick={() => setActiveChat(c.id)}
-                className={cn(
-                  "w-full flex items-center gap-2 px-2.5 py-2.5 rounded-lg text-sm text-left group",
-                  activeChatId === c.id ? "bg-zinc-800 text-white" : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+              <div key={c.id} className="group relative">
+                {renamingChatId === c.id ? (
+                  <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-zinc-800">
+                    <MessageSquare size={14} className="shrink-0 opacity-60 text-zinc-400" />
+                    <input
+                      ref={renameInputRef}
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") commitRename();
+                        if (e.key === "Escape") cancelRename();
+                      }}
+                      onBlur={commitRename}
+                      className="flex-1 min-w-0 bg-zinc-900 border border-zinc-600 rounded px-2 py-0.5 text-sm text-white outline-none"
+                      maxLength={100}
+                    />
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setActiveChat(c.id)}
+                    className={cn(
+                      "w-full flex items-center gap-2 px-2.5 py-2.5 rounded-lg text-sm text-left group",
+                      activeChatId === c.id ? "bg-zinc-800 text-white" : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+                    )}
+                  >
+                    <MessageSquare size={14} className="shrink-0 opacity-60" />
+                    <span className="flex-1 truncate">{c.title}</span>
+                    <Pencil
+                      size={12}
+                      className="opacity-0 group-hover:opacity-100 hover:text-zinc-200 shrink-0"
+                      onClick={(e) => startRename(c, e)}
+                    />
+                    <Trash2
+                      size={12}
+                      className="opacity-0 group-hover:opacity-100 hover:text-red-400 shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!confirm("Delete this chat?")) return;
+                        api.deleteChat(c.id).then(() => {
+                          setChats(chats.filter((x) => x.id !== c.id));
+                          if (activeChatId === c.id) setActiveChat(null);
+                        });
+                      }}
+                    />
+                  </button>
                 )}
-              >
-                <MessageSquare size={14} className="shrink-0 opacity-60" />
-                <span className="flex-1 truncate">{c.title}</span>
-                <Trash2
-                  size={12}
-                  className="opacity-0 group-hover:opacity-100 hover:text-red-400 shrink-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!confirm("Delete this chat?")) return;
-                    api.deleteChat(c.id).then(() => {
-                      setChats(chats.filter((x) => x.id !== c.id));
-                      if (activeChatId === c.id) setActiveChat(null);
-                    });
-                  }}
-                />
-              </button>
+              </div>
             ))
           )}
         </div>
