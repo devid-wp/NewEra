@@ -2,7 +2,7 @@ use crate::db::{map_space, DbState};
 use crate::models::{CreateSpacePayload, Space, UpdateSpacePayload};
 use chrono::Utc;
 use rusqlite::params;
-use tauri::State;
+use tauri::{Manager, State};
 use uuid::Uuid;
 
 #[tauri::command]
@@ -20,7 +20,11 @@ pub fn list_spaces(state: State<DbState>) -> Result<Vec<Space>, String> {
 }
 
 #[tauri::command]
-pub fn create_space(state: State<DbState>, payload: CreateSpacePayload) -> Result<Space, String> {
+pub fn create_space(
+    app: tauri::AppHandle,
+    state: State<DbState>,
+    payload: CreateSpacePayload,
+) -> Result<Space, String> {
     if payload.name.trim().is_empty() {
         return Err("Space name cannot be empty".to_string());
     }
@@ -61,6 +65,14 @@ pub fn create_space(state: State<DbState>, payload: CreateSpacePayload) -> Resul
             e.to_string()
         }
     })?;
+
+    // Create workspace folder: app_data_dir/workspaces/<name>/memory/
+    if let Ok(base) = app.path().app_data_dir() {
+        let workspace_dir = base.join("workspaces").join(&space.name);
+        let memory_dir = workspace_dir.join("memory");
+        let _ = std::fs::create_dir_all(&memory_dir);
+        eprintln!("[spaces] created workspace folder: {}", memory_dir.display());
+    }
 
     Ok(space)
 }
@@ -115,13 +127,33 @@ pub fn update_space(state: State<DbState>, id: String, payload: UpdateSpacePaylo
 }
 
 #[tauri::command]
-pub fn delete_space(state: State<DbState>, id: String) -> Result<(), String> {
+pub fn delete_space(app: tauri::AppHandle, state: State<DbState>, id: String) -> Result<(), String> {
     let conn = state.conn.lock().map_err(|e| e.to_string())?;
+
+    // Get space name before deleting (for folder cleanup)
+    let space_name: String = conn
+        .query_row(
+            "SELECT name FROM spaces WHERE id = ?1",
+            params![id],
+            |r| r.get(0),
+        )
+        .map_err(|_| "Space not found".to_string())?;
+
     let affected = conn
         .execute("DELETE FROM spaces WHERE id = ?1", params![id])
         .map_err(|e| e.to_string())?;
     if affected == 0 {
         return Err("Space not found".to_string());
     }
+
+    // Remove workspace folder
+    if let Ok(base) = app.path().app_data_dir() {
+        let workspace_dir = base.join("workspaces").join(&space_name);
+        if workspace_dir.exists() {
+            let _ = std::fs::remove_dir_all(&workspace_dir);
+            eprintln!("[spaces] removed workspace folder: {}", workspace_dir.display());
+        }
+    }
+
     Ok(())
 }
