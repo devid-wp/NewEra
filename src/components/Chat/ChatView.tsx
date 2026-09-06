@@ -12,8 +12,10 @@ export function ChatView() {
   const [streaming, setStreaming] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [exportText, setExportText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const streamingTextRef = useRef("");
+  const messagesSentRef = useRef(0);
 
   const activeSpace = spaces.find((s) => s.id === activeSpaceId);
 
@@ -27,6 +29,7 @@ export function ChatView() {
       setMessages([]);
       return;
     }
+    messagesSentRef.current = 0;
     loadMessages(activeChatId);
   }, [activeChatId, loadMessages]);
 
@@ -70,9 +73,10 @@ export function ChatView() {
     setStreaming("");
     streamingTextRef.current = "";
     await api.sendMessage(activeSpaceId, activeChatId, text);
-    if (messages.length === 1) {
+    if (messagesSentRef.current === 0) {
       await api.setChatTitle(activeChatId, text);
     }
+    messagesSentRef.current++;
   };
 
   const handleAbort = async () => {
@@ -134,7 +138,16 @@ export function ChatView() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setShowExport(true)}
+            onClick={async () => {
+              if (!activeChatId) return;
+              try {
+                const text = await api.exportChat(activeChatId);
+                setExportText(text);
+                setShowExport(true);
+              } catch (e) {
+                console.error("Export failed:", e);
+              }
+            }}
             title="Export chat"
           >
             <Download size={12} />
@@ -149,12 +162,13 @@ export function ChatView() {
             <textarea
               rows={10}
               className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-sm font-mono outline-none resize-none"
+              value={exportText}
               onFocus={(e) => e.target.select()}
               readOnly
             />
             <div className="mt-4 flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setShowExport(false)}>Close</Button>
-              <Button onClick={() => setShowExport(false)}>Copy</Button>
+              <Button onClick={() => { navigator.clipboard.writeText(exportText); setShowExport(false); }}>Copy</Button>
             </div>
           </div>
         </div>
