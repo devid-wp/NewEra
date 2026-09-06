@@ -95,12 +95,20 @@ impl AiProvider for OllamaProvider {
     }
 
     async fn health(&self) -> bool {
-        self.client
-            .get(self.url("/api/tags"))
-            .send()
-            .await
-            .map(|resp| resp.status().is_success())
-            .unwrap_or(false)
+        let url = self.url("/api/tags");
+        match self.client.get(&url).send().await {
+            Ok(resp) => {
+                let ok = resp.status().is_success();
+                if !ok {
+                    eprintln!("[ollama] health check failed: url={} status={}", url, resp.status());
+                }
+                ok
+            }
+            Err(e) => {
+                eprintln!("[ollama] health check error: url={} error={}", url, e);
+                false
+            }
+        }
     }
 
     async fn chat_stream(
