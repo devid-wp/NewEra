@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { api, type Memory } from "@/api/tauri";
 import { useAppStore } from "@/stores/useAppStore";
 import { Button } from "@/components/ui/button";
@@ -14,38 +14,49 @@ export function MemoryEditor({ onClose }: { onClose: () => void }) {
   const [showForm, setShowForm] = useState(false);
   const [content, setContent] = useState("");
   const [category, setCategory] = useState<string>("fact");
+  const activeSpaceIdRef = useRef(activeSpaceId);
+
+  // Keep ref in sync
+  activeSpaceIdRef.current = activeSpaceId;
 
   const activeSpace = spaces.find((s) => s.id === activeSpaceId);
 
-  const refresh = async () => {
-    if (!activeSpaceId) return;
+  const refresh = async (targetSpaceId?: string | null) => {
+    const spaceId = targetSpaceId ?? activeSpaceIdRef.current;
+    if (!spaceId) return;
     setLoading(true);
     try {
-      setMemories(await api.listMemories(activeSpaceId));
+      const data = await api.listMemories(spaceId);
+      // Only apply if this is still the active space
+      if (activeSpaceIdRef.current === spaceId) {
+        setMemories(data);
+      }
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      if (activeSpaceIdRef.current === spaceId) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     setMemories([]);
     setShowForm(false);
-    refresh();
+    refresh(activeSpaceId);
   }, [activeSpaceId]);
 
   const handleAdd = async () => {
     if (!content.trim() || !activeSpaceId) return;
     const mem = await api.addMemory(activeSpaceId, content.trim(), category);
-    setMemories([mem, ...memories]);
+    setMemories((prev) => [mem, ...prev]);
     setContent("");
     setShowForm(false);
   };
 
   const handleDelete = async (id: string) => {
     await api.deleteMemory(id);
-    setMemories(memories.filter((m) => m.id !== id));
+    setMemories((prev) => prev.filter((m) => m.id !== id));
   };
 
   if (!activeSpaceId) {
