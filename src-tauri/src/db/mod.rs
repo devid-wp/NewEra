@@ -112,7 +112,14 @@ fn seed_if_empty(conn: &Connection) -> Result<(), String> {
         .query_row("SELECT COUNT(*) FROM spaces", [], |r| r.get(0))
         .map_err(|e| e.to_string())?;
 
+    let model = read_selected_model();
+
     if count > 0 {
+        // Update existing Default space's model if .model file has a different one
+        let _ = conn.execute(
+            "UPDATE spaces SET model = ?1 WHERE name = 'Default' AND model != ?1",
+            params![model],
+        );
         return Ok(());
     }
 
@@ -125,7 +132,7 @@ fn seed_if_empty(conn: &Connection) -> Result<(), String> {
             "Default",
             "🧠",
             "You are a helpful assistant.",
-            "qwen2.5:3b",
+            model,
             0.7,
             "ollama",
             now,
@@ -140,8 +147,27 @@ fn seed_if_empty(conn: &Connection) -> Result<(), String> {
     )
     .map_err(|e| e.to_string())?;
 
-    println!("[db] seeded Default space");
+    println!("[db] seeded Default space with model: {}", model);
     Ok(())
+}
+
+fn read_selected_model() -> String {
+    // 1. Check .model file in project root (set by start.sh)
+    if let Ok(model) = std::fs::read_to_string(".model") {
+        let model = model.trim().to_string();
+        if !model.is_empty() {
+            return model;
+        }
+    }
+    // 2. Check environment variable
+    if let Ok(model) = std::env::var("NEWERA_MODEL") {
+        let model = model.trim().to_string();
+        if !model.is_empty() {
+            return model;
+        }
+    }
+    // 3. Default
+    "qwen2.5:3b".to_string()
 }
 
 fn cleanup_legacy_spaces(conn: &Connection) -> Result<(), String> {
