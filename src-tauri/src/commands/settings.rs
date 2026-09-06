@@ -28,6 +28,7 @@ pub async fn health_check(state: State<'_, DbState>) -> Result<HealthStatus, Str
     let ollama_url = get_ollama_url(&state)?;
     let provider = crate::providers::ollama::OllamaProvider::new(ollama_url);
     let ollama_ok = provider.health().await;
+    eprintln!("[health] db={}, ollama={}", db_ok, ollama_ok);
     Ok(HealthStatus {
         ollama: ollama_ok,
         db: db_ok,
