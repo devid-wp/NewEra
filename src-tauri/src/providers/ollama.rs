@@ -2,6 +2,9 @@ use super::{AiProvider, ChatMessage, ChatOptions};
 use futures_util::StreamExt;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use std::time::Duration;
 
 #[derive(Debug, Deserialize)]
 struct OllamaTags {
@@ -56,7 +59,11 @@ impl OllamaProvider {
     pub fn new(base_url: String) -> Self {
         Self {
             base_url: base_url.trim_end_matches('/').to_string(),
-            client: Client::new(),
+            client: Client::builder()
+                .connect_timeout(Duration::from_secs(10))
+                .timeout(Duration::from_secs(300)) // 5 min max per request
+                .build()
+                .unwrap_or_else(|_| Client::new()),
         }
     }
 
