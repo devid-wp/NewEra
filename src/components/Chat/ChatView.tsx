@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { api, onChatChunk, type Message } from "@/api/tauri";
 import { useAppStore } from "@/stores/useAppStore";
 import { Button } from "@/components/ui/button";
@@ -11,54 +11,48 @@ export function ChatView() {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
-    const [showExport, setShowExport] = useState(false);
-    const exportMd = "";
+  const [showExport, setShowExport] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const streamingTextRef = useRef("");
 
   const activeSpace = spaces.find((s) => s.id === activeSpaceId);
 
+  const loadMessages = useCallback((chatId: string) => {
+    api.listMessages(chatId).then(setMessages).catch(console.error);
+  }, []);
+
+  // Load messages when chat changes
   useEffect(() => {
     if (!activeChatId) {
       setMessages([]);
       return;
     }
-    api.listMessages(activeChatId).then(setMessages).catch(console.error);
-  }, [activeChatId]);
+    loadMessages(activeChatId);
+  }, [activeChatId, loadMessages]);
 
+  // Auto-scroll on new messages or streaming
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streaming]);
 
+  // Listen for streaming chunks
   useEffect(() => {
     let unlisten: (() => void) | undefined;
     onChatChunk((c) => {
       if (c.chatId !== activeChatId) return;
       if (c.done) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: crypto.randomUUID(),
-            chat_id: c.chatId,
-            role: "assistant",
-            content: streamingRef.current,
-            created_at: new Date().toISOString(),
-          },
-        ]);
-        streamingRef.current = "";
+        // Backend saved the message — reload from DB to get the real one
+        streamingTextRef.current = "";
         setStreaming("");
         setIsStreaming(false);
+        loadMessages(c.chatId);
       } else {
-        streamingRef.current += c.delta;
-        setStreaming(streamingRef.current);
+        streamingTextRef.current += c.delta;
+        setStreaming(streamingTextRef.current);
       }
     }).then((fn) => (unlisten = fn));
     return () => unlisten?.();
-  }, [activeChatId]);
-
-  const streamingRef = useRef("");
-  useEffect(() => {
-    streamingRef.current = streaming;
-  }, [streaming]);
+  }, [activeChatId, loadMessages]);
 
   const send = async () => {
     if (!input.trim() || !activeSpaceId || !activeChatId) return;
@@ -74,12 +68,20 @@ export function ChatView() {
     setInput("");
     setIsStreaming(true);
     setStreaming("");
-    streamingRef.current = "";
+    streamingTextRef.current = "";
     await api.sendMessage(activeSpaceId, activeChatId, text);
-    // Set chat title from first message (new chat only)
     if (messages.length === 1) {
       await api.setChatTitle(activeChatId, text);
     }
+  };
+
+  const handleAbort = async () => {
+    if (!activeChatId) return;
+    // Tell backend to stop — it saves partial text to DB
+    api.abortGeneration(activeChatId);
+    // Keep streaming text visible while backend saves
+    // Reload from DB after a short delay to let the save complete
+    setTimeout(() => loadMessages(activeChatId), 500);
   };
 
   if (!activeSpaceId) {
@@ -128,22 +130,28 @@ export function ChatView() {
           </span>
         </div>
         <div className="flex items-center gap-2 text-xs text-zinc-500">
-              {messages.length} messages · SQLite
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowExport(true)}
-                title="Export chat"
-              >
+          {messages.length} messages · SQLite
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowExport(true)}
+            title="Export chat"
+          >
+            <Download size={12} />
+          </Button>
+        </div>
+      </header>
+
       {showExport && (
         <div className="fixed inset-0 z-10 bg-black/80 flex items-center justify-center p-4">
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 max-w-lg w-full">
             <h3 className="text-lg font-semibold mb-4">Export Chat</h3>
             <textarea
               rows={10}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-sm monospace outline-none resize-none"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-sm font-mono outline-none resize-none"
               onFocus={(e) => e.target.select()}
-            >{exportMd}</textarea>
+              readOnly
+            />
             <div className="mt-4 flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setShowExport(false)}>Close</Button>
               <Button onClick={() => setShowExport(false)}>Copy</Button>
@@ -151,10 +159,6 @@ export function ChatView() {
           </div>
         </div>
       )}
-                <Download size={12} />
-              </Button>
-            </div>
-      </header>
 
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-3xl mx-auto w-full px-6 py-8 space-y-6">
@@ -189,8 +193,7 @@ export function ChatView() {
               className="shrink-0 h-9 w-9 rounded-xl"
               onClick={() => {
                 if (isStreaming) {
-                  api.abortGeneration(activeChatId);
-                  setIsStreaming(false);
+                  handleAbort();
                 } else {
                   send();
                 }
