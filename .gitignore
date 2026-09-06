@@ -31,3 +31,4 @@ src-tauri/data/
 *.db
 *.db-journal
 .env
+.model
