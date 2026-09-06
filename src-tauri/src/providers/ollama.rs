@@ -117,6 +117,7 @@ impl AiProvider for OllamaProvider {
         messages: Vec<ChatMessage>,
         options: ChatOptions,
         on_chunk: Box<dyn Fn(String) + Send + 'static>,
+        abort: Option<Arc<AtomicBool>>,
     ) -> Result<(), String> {
         let req_messages: Vec<ChatRequestMessage> = messages
             .iter()
@@ -149,32 +150,62 @@ impl AiProvider for OllamaProvider {
         }
 
         let mut byte_stream = resp.bytes_stream();
+        let mut _saw_done = false;
 
         while let Some(chunk_res) = byte_stream.next().await {
-            let chunk = chunk_res.map_err(|e| format!("Stream error: {}", e))?;
-            // NDJSON: each line is a JSON object
-            let text = String::from_utf8_lossy(&chunk);
-            for line in text.lines() {
-                let line = line.trim();
-                if line.is_empty() {
-                    continue;
+            // Check abort flag before processing each chunk
+            if let Some(ref flag) = abort {
+                if flag.load(Ordering::Relaxed) {
+                    eprintln!("[ollama] abort flag set — stopping stream");
+                    return Ok(());
                 }
-                let parsed: OllamaChunk =
-                    serde_json::from_str(line).map_err(|e| format!("Parse chunk failed: {}", e))?;
-                if let Some(err) = parsed.error {
-                    return Err(err);
-                }
-                if let Some(msg) = parsed.message {
-                    if !msg.content.is_empty() {
-                        on_chunk(msg.content);
+            }
+
+            match chunk_res {
+                Ok(chunk) => {
+                    let text = String::from_utf8_lossy(&chunk);
+                    for line in text.lines() {
+                        let line = line.trim();
+                        if line.is_empty() {
+                            continue;
+                        }
+                        match serde_json::from_str::<OllamaChunk>(line) {
+                            Ok(parsed) => {
+                                if let Some(err) = parsed.error {
+                                    return Err(err);
+                                }
+                                if let Some(msg) = parsed.message {
+                                    if !msg.content.is_empty() {
+                                        on_chunk(msg.content);
+                                    }
+                                }
+                                if parsed.done.unwrap_or(false) {
+                                    _saw_done = true;
+                                    return Ok(());
+                                }
+                            }
+                            Err(e) => {
+                                // Don't kill the stream on a single malformed line —
+                                // log and continue (Ollama sometimes sends partial JSON)
+                                eprintln!("[ollama] skipping malformed chunk: {} | line: {}", e, &line[..line.len().min(120)]);
+                            }
+                        }
                     }
                 }
-                if parsed.done.unwrap_or(false) {
-                    return Ok(());
+                Err(e) => {
+                    // Stream read error — log and break gracefully
+                    // (partial response is already in the DB placeholder)
+                    eprintln!("[ollama] stream read error (partial response saved): {}", e);
+                    return Err(format!("Stream interrupted: {}", e));
                 }
             }
         }
 
+        // Stream ended without `done: true` — Ollama closed connection early
+        // Return Ok so the caller saves whatever we got
+        if !_saw_done {
+            eprintln!("[ollama] stream ended without done=true (partial response)");
+        }
         Ok(())
     }
 }
@@ -197,6 +228,7 @@ impl AiProvider for LlamaCppProvider {
         _messages: Vec<ChatMessage>,
         _options: ChatOptions,
         _on_chunk: Box<dyn Fn(String) + Send + 'static>,
+        _abort: Option<Arc<AtomicBool>>,
     ) -> Result<(), String> {
         Err("llama.cpp not implemented yet".to_string())
     }
