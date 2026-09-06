@@ -47,6 +47,9 @@ pub fn init_db(app: &AppHandle) -> Result<DbState, String> {
     // User requested: keep only Default — clean up legacy seeded spaces
     cleanup_legacy_spaces(&conn)?;
 
+    // Ensure workspace folders exist for all spaces
+    ensure_workspace_folders(app, &conn)?;
+
     println!("[db] initialized at {}", path.display());
     Ok(DbState::new(conn))
 }
@@ -147,6 +150,31 @@ fn cleanup_legacy_spaces(conn: &Connection) -> Result<(), String> {
     for name in legacy {
         conn.execute("DELETE FROM spaces WHERE name = ?1", params![name])
             .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+fn ensure_workspace_folders(app: &AppHandle, conn: &Connection) -> Result<(), String> {
+    let base = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("app_data_dir error: {}", e))?;
+
+    let mut stmt = conn
+        .prepare("SELECT name FROM spaces")
+        .map_err(|e| e.to_string())?;
+    let names: Vec<String> = stmt
+        .query_map([], |r| r.get(0))
+        .map_err(|e| e.to_string())?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())?;
+
+    for name in names {
+        let memory_dir = base.join("workspaces").join(&name).join("memory");
+        if !memory_dir.exists() {
+            let _ = std::fs::create_dir_all(&memory_dir);
+            eprintln!("[db] created workspace folder: {}", memory_dir.display());
+        }
     }
     Ok(())
 }
