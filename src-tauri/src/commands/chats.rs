@@ -97,6 +97,13 @@ pub fn rename_chat(state: State<DbState>, chat_id: String, title: String) -> Res
 #[tauri::command]
 pub fn list_messages(state: State<DbState>, chat_id: String) -> Result<Vec<Message>, String> {
     let conn = state.conn.lock().map_err(|e| e.to_string())?;
+
+    // Clean up empty assistant placeholders from interrupted sessions
+    let _ = conn.execute(
+        "DELETE FROM messages WHERE chat_id = ?1 AND role = 'assistant' AND content = ''",
+        params![chat_id],
+    );
+
     let mut stmt = conn
         .prepare("SELECT id, chat_id, role, content, created_at FROM messages WHERE chat_id = ?1 ORDER BY created_at ASC")
         .map_err(|e| e.to_string())?;
