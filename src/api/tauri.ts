@@ -37,7 +37,6 @@ export type Memory = {
   created_at: string;
   updated_at: string;
 };
-
 export const api = {
   listSpaces: () => invoke<Space[]>("list_spaces"),
   createSpace: (payload: { name: string; icon?: string; system_prompt?: string; model?: string; temperature?: number }) =>
@@ -50,6 +49,7 @@ export const api = {
   createChat: (spaceId: string, title?: string) => invoke<Chat>("create_chat", { spaceId, title }),
   deleteChat: (chatId: string) => invoke<void>("delete_chat", { chatId }),
   renameChat: (chatId: string, title: string) => invoke<Chat>("rename_chat", { chatId, title }),
+
   listMessages: (chatId: string) => invoke<Message[]>("list_messages", { chatId }),
 
   sendMessage: (spaceId: string, chatId: string, content: string) =>
@@ -67,6 +67,12 @@ export const api = {
   setSettings: (key: string, value: string) => invoke<void>("set_settings", { key, value }),
   setChatTitle: (chatId: string, title: string) => invoke<void>("set_chat_title", { chatId, title }),
   exportChat: (chatId: string) => invoke<string>("export_chat", { chatId }),
+
+  // First-run / Ollama runtime
+  checkOllamaStatus: () => invoke<string>("check_ollama_status", {}),
+  startOllama: () => invoke<string>("start_ollama", {}),
+  installModel: (model: string) => invoke<string>("install_model", { modelName: model }),
+  checkModelExists: (model: string) => invoke<boolean>("check_model_exists", { modelName: model }),
 };
 
 export type ChatChunk = { chatId: string; delta: string; done: boolean };
