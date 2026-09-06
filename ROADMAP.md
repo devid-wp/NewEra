@@ -16,10 +16,12 @@
 - [x] MemoryEditor UI
 - **Done:** память изолирована по Space
 
-## Этап 5 — Polish (День 10-11) ← NEXT
-- [ ] Settings (модель/temperature/ollama_url/theme)
-- [ ] Авто-титул, поиск, экспорт .md, оффлайн баннер, хоткеи
-- **Done:** daily-driver готов
+## Этап 5 — Polish (День 10-11) ✅
+- [x] Settings: модель/temperature/ollama_url/theme (готов UI Dialog)
+- [x] Авто-титул чата из первого сообщения
+- [x] Экспорт чата в .md
+- [x] Поиск чатов в сайдбаре
+- [ ] Хоткеи: Ctrl+N, Esc, Ctrl+K
 
 ## Этап 6 — Build (День 12-13)
 - [ ] tauri bundler, иконки, README

@@ -7,11 +7,14 @@ type State = {
   chats: Chat[];
   activeChatId: string | null;
   messages: Message[];
+  memoriesOpen: boolean;
   setSpaces: (s: Space[]) => void;
   setActiveSpace: (id: string) => void;
   setChats: (c: Chat[]) => void;
   setActiveChat: (id: string | null) => void;
   setMessages: (m: Message[]) => void;
+  setMemoriesOpen: (open: boolean) => void;
+  openSpacePalette: () => void;
 };
 
 export const useAppStore = create<State>((set) => ({
@@ -20,9 +23,12 @@ export const useAppStore = create<State>((set) => ({
   chats: [],
   activeChatId: null,
   messages: [],
+  memoriesOpen: false,
   setSpaces: (spaces) => set({ spaces }),
   setActiveSpace: (activeSpaceId) => set({ activeSpaceId, activeChatId: null, chats: [], messages: [] }),
   setChats: (chats) => set({ chats }),
   setActiveChat: (activeChatId) => set({ activeChatId }),
   setMessages: (messages) => set({ messages }),
+  setMemoriesOpen: (open) => set({ memoriesOpen: open }),
+  openSpacePalette: () => set({ activeSpaceId: null }),
 }));

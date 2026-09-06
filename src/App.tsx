@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAppStore } from "@/stores/useAppStore";
 import { Sidebar } from "@/components/Sidebar/Sidebar";
 import { ChatView } from "@/components/Chat/ChatView";
 import { MemoryEditor } from "@/components/Memory/MemoryEditor";
@@ -6,14 +7,33 @@ import { SettingsDialog } from "@/components/Settings/SettingsDialog";
 import { api } from "@/api/tauri";
 
 function App() {
-  const [memoriesOpen, setMemoriesOpen] = useState(false);
+  const { memoriesOpen, setMemoriesOpen, openSpacePalette } = useAppStore();
+  const { activeSpaceId, activeChatId, spaces } = useAppStore();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     api.getSettings().then((s) => {
       document.documentElement.classList.toggle("dark", s.theme !== "light");
     });
-  }, []);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (settingsOpen) setSettingsOpen(false);
+        else if (memoriesOpen) setMemoriesOpen(false);
+      }
+      if (e.ctrlKey && e.key === "n") {
+        e.preventDefault();
+        setMemoriesOpen((v) => !v);
+      }
+      if (e.key === "K" && e.ctrlKey) {
+        e.preventDefault();
+        openSpacePalette();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [settingsOpen, memoriesOpen]);
 
   return (
     <div className="h-screen w-screen flex bg-[#0a0a0a] text-zinc-100 overflow-hidden select-none">
