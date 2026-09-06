@@ -8,7 +8,6 @@ import { api } from "@/api/tauri";
 
 function App() {
   const { memoriesOpen, setMemoriesOpen, openSpacePalette } = useAppStore();
-  const { activeSpaceId, activeChatId, spaces } = useAppStore();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
@@ -23,7 +22,7 @@ function App() {
       }
       if (e.ctrlKey && e.key === "n") {
         e.preventDefault();
-        setMemoriesOpen((v) => !v);
+        setMemoriesOpen(!memoriesOpen);
       }
       if (e.key === "K" && e.ctrlKey) {
         e.preventDefault();
@@ -38,7 +37,7 @@ function App() {
   return (
     <div className="h-screen w-screen flex bg-[#0a0a0a] text-zinc-100 overflow-hidden select-none">
       <Sidebar
-        onToggleMemories={() => setMemoriesOpen((v) => !v)}
+        onToggleMemories={() => setMemoriesOpen(!memoriesOpen)}
         memoriesOpen={memoriesOpen}
         onOpenSettings={() => setSettingsOpen(true)}
       />
