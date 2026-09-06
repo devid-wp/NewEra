@@ -32,3 +32,4 @@ src-tauri/data/
 *.db-journal
 .env
 .model
+.npm_hash
