@@ -1,8 +1,9 @@
 use crate::models::{Memory, Message, Space};
 
-// Assistant replies that claim to be an AI without memory/identity contradict the
-// user profile facts stored in memory. Keeping them in history poisons the model's
-// continuation, so they are dropped together with the user turn that triggered them.
+// Assistant replies that claim to be an AI without memory/identity, or that dodge the
+// question instead of answering from the stored facts, contradict the user profile.
+// Keeping them in history poisons the model's continuation, so they are dropped
+// together with the user turn that triggered them.
 fn contradicts_user_profile(text: &str) -> bool {
     let t = text.to_lowercase();
     [
@@ -18,6 +19,9 @@ fn contradicts_user_profile(text: &str) -> bool {
         "i have no memories",
         "i do not have memories",
         "without a memory",
+        "i am developed by microsoft",
+        "developed by microsoft",
+        // Russian: hard AI-persona claims
         "как ии",
         "я ии",
         "я являюсь ии",
@@ -29,6 +33,16 @@ fn contradicts_user_profile(text: &str) -> bool {
         "я не обладаю памятью",
         "я не помню",
         "я не могу помнить",
+        // Russian: evasive non-answers about the user's identity
+        "вы кажетесь",
+        "вы ищете информацию о себе",
+        "вы в состоянии",
+        "я ваш помощник",
+        "я – ваш помощник",
+        "я - ваш помощник",
+        "являюсь виртуальным помощником",
+        "звучит так, будто вы упоминаете",
+        "не знаю кто вы",
     ]
     .iter()
     .any(|pat| t.contains(pat))
@@ -63,15 +77,16 @@ pub fn build_prompt(
     let mut system_content = space.system_prompt.clone();
     if !memories.is_empty() {
         system_content.push_str(
-            "\n\n## User profile / Long-term memory\n\
-             The following facts describe the person you are talking to.\n",
+            "\n\n## User profile (facts about THE USER you are talking to — NOT about you)\n\
+             The facts below describe the person chatting with you, never yourself.\n",
         );
         for m in memories.iter().take(10) {
-            system_content.push_str(&format!("- {}\n", m.content));
+            system_content.push_str(&format!("- User fact: {}\n", m.content));
         }
         system_content.push_str(
-            "\nUse these facts whenever they are relevant. If asked anything about the user \
-             themselves, if a memory fact answers it, use that fact as the authoritative answer.",
+            "\nAlways answer questions about the user from these facts. If asked who the user is, \
+             reply with the facts. Never claim to be the user, and never say you have no identity \
+             or no memory.",
         );
     }
 
