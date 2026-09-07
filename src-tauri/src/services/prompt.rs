@@ -11,10 +11,17 @@ pub fn build_prompt(
 
     let mut system_content = space.system_prompt.clone();
     if !memories.is_empty() {
-        system_content.push_str("\n\n## Long-term memory:\n");
+        system_content.push_str(
+            "\n\n## User profile / Long-term memory\n\
+             The following facts describe the person you are talking to.\n",
+        );
         for m in memories.iter().take(10) {
             system_content.push_str(&format!("- {}\n", m.content));
         }
+        system_content.push_str(
+            "\nUse these facts whenever they are relevant. If asked anything about the user \
+             themselves, if a memory fact answers it, use that fact as the authoritative answer.",
+        );
     }
 
     messages.push(crate::providers::ChatMessage {
