@@ -3,7 +3,31 @@ import { api, onChatChunk, type Message } from "@/api/tauri";
 import { useAppStore } from "@/stores/useAppStore";
 import { Button } from "@/components/ui/button";
 import { MessageBubble } from "@/components/Chat/MessageBubble";
-import { Send, Square, Cpu, Sparkles, Download } from "lucide-react";
+import { Send, Square, Cpu, Sparkles, Download, BrainCircuit } from "lucide-react";
+
+function StreamingBubble({ text }: { text: string }) {
+  const hasText = text.trim().length > 0;
+  return (
+    <div className="flex justify-start nr-fade-up">
+      <div className="max-w-[85%] bg-zinc-900 border border-zinc-800 rounded-2xl rounded-bl-sm px-4 py-3 text-sm text-zinc-100 nr-glow">
+        {hasText ? (
+          <p className="my-1.5 leading-relaxed whitespace-pre-wrap break-words text-zinc-100">
+            {text}
+            <span className="nr-caret" />
+          </p>
+        ) : (
+          <div className="flex items-center gap-3 py-1">
+            <BrainCircuit size={15} className="text-blue-400 animate-pulse shrink-0" />
+            <div className="nr-dots text-zinc-400">
+              <span /><span /><span />
+            </div>
+            <span className="text-xs text-zinc-500">thinking</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function ChatView() {
   const { activeSpaceId, activeChatId, spaces } = useAppStore();
@@ -180,7 +204,7 @@ export function ChatView() {
             <MessageBubble key={m.id} role={m.role} content={m.content} />
           ))}
           {isStreaming && (
-            <MessageBubble role="assistant" content={streaming || "…"} streaming />
+            <StreamingBubble text={streaming} />
           )}
           <div ref={bottomRef} />
         </div>
