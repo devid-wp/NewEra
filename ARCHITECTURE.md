@@ -202,7 +202,7 @@ CREATE TABLE spaces (
   name TEXT NOT NULL UNIQUE,
   icon TEXT NOT NULL, -- emoji или lucide name: "code2", "graduation-cap"
   system_prompt TEXT NOT NULL,
-  model TEXT NOT NULL DEFAULT 'qwen2.5:3b',
+  model TEXT NOT NULL DEFAULT 'qwen3:8b',
   temperature REAL DEFAULT 0.7,
   provider TEXT NOT NULL DEFAULT 'ollama', -- для будущей расширяемости
   created_at TEXT NOT NULL,
@@ -335,7 +335,7 @@ fn get_provider(name: &str) -> Box<dyn AiProvider> { match name { "ollama" => Bo
 
 ```
 ┌─ Sidebar 280px ────────────────┬─ Main ──────────────────────────┐
-│ NewEra  [⌘K]                   │  💻 Programming · qwen2.5:3b   │
+│ NewEra  [⌘K]                   │  💻 Programming · qwen3:8b   │
 │ ─────────────────              │  ─────────────────────────────  │
 │ Spaces                         │                                 │
 │ ● 🧠 Default                   │   User: Как сделать миграцию?  │
@@ -392,7 +392,7 @@ fn get_provider(name: &str) -> Box<dyn AiProvider> { match name { "ollama" => Bo
 
 ### Этап 6 — Сборка [1-2 дня]
 - [ ] `tauri.conf.json` иконки, bundler, `cargo tauri build`
-- [ ] README: `ollama pull qwen2.5:3b && cargo tauri dev`
+- [ ] README: `ollama pull qwen3:8b && cargo tauri dev`
 - [ ] Тег `v0.1.0-mvp` — .deb/.AppImage/.exe
 
 > Каждый этап = отдельный коммит/PR. Не смешивать.
@@ -411,7 +411,7 @@ fn get_provider(name: &str) -> Box<dyn AiProvider> { match name { "ollama" => Bo
 ## 11. Команды старта (после git init)
 
 ```bash
-cd /home/kr1m12/Desktop/NewEra
+cd /path/to/NewEra
 git init && git branch -M main
 
 # Tauri 2 prerequisites (Arch/Debian)
@@ -433,7 +433,7 @@ cd ..
 
 # Ollama
 ollama serve &
-ollama pull qwen2.5:3b
+ollama pull qwen3:8b
 curl http://localhost:11434/api/tags
 
 # Dev

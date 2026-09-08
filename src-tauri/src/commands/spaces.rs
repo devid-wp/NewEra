@@ -36,7 +36,7 @@ pub fn create_space(
         system_prompt: payload
             .system_prompt
             .unwrap_or_else(|| "You are a helpful assistant.".to_string()),
-        model: payload.model.unwrap_or_else(|| "qwen2.5:3b".to_string()),
+        model: payload.model.unwrap_or_else(|| "qwen3:8b".to_string()),
         temperature: payload.temperature.unwrap_or(0.7),
         provider: "ollama".to_string(),
         created_at: now,

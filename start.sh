@@ -8,7 +8,7 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-MODEL="qwen2.5:3b"
+MODEL="qwen3:8b"
 OLLAMA_URL="http://localhost:11434"
 
 print_status() { echo -e "${CYAN}[*]${NC} $1"; }
@@ -325,11 +325,11 @@ if [ ${#CHAT_MODELS[@]} -eq 0 ]; then
   print_warn "No chat models found on this device."
   echo ""
   echo -e "  ${CYAN}Suggestions by purpose:${NC}"
-  echo "    1) qwen2.5:3b       — general, fast (default)"
+  echo "    1) qwen3:8b         — general, smart all-rounder (default)"
   echo "    2) phi4-mini:3.8b   — learning, math, physics homework"
   echo "    3) qwen2.5-coder:7b — coding, programming, code review"
   echo "    4) gemma3:4b        — Google, balanced general"
-  echo "    5) qwen3:8b         — newer generation, smart all-rounder"
+  echo "    5) qwen2.5:3b       — general, fast, lightweight"
   echo "    6) Browse all models..."
   echo ""
   read -p "  Choose model [1-6] (default: 1): " -r CHOICE
@@ -343,11 +343,11 @@ if [ ${#CHAT_MODELS[@]} -eq 0 ]; then
     4) MODEL="gemma3:4b"
        print_status "Pulling $MODEL..."
        ollama pull "$MODEL" ;;
-    5) MODEL="qwen3:8b"
+    5) MODEL="qwen2.5:3b"
        print_status "Pulling $MODEL..."
        ollama pull "$MODEL" ;;
     6) pick_from_candidates ;;
-    *) MODEL="qwen2.5:3b"
+    *) MODEL="qwen3:8b"
        print_status "Pulling $MODEL..."
        ollama pull "$MODEL" ;;
   esac

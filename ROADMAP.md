@@ -8,7 +8,7 @@
 - [x] services/prompt.rs (system + memories + history)
 - [x] send_message + emit(chat:chunk) + markdown
 - [x] abort_generation
-- **Done:** живой чат с qwen2.5:3b, стриминг, markdown
+- **Done:** живой чат с qwen3:8b, стриминг, markdown
 
 ## Этап 4 — Memory (День 8-9) ✅
 - [x] memories table + CRUD

@@ -62,7 +62,7 @@ fn run_migrations(conn: &Connection) -> Result<(), String> {
             name TEXT NOT NULL UNIQUE,
             icon TEXT NOT NULL,
             system_prompt TEXT NOT NULL,
-            model TEXT NOT NULL DEFAULT 'qwen2.5:3b',
+            model TEXT NOT NULL DEFAULT 'qwen3:8b',
             temperature REAL NOT NULL DEFAULT 0.7,
             provider TEXT NOT NULL DEFAULT 'ollama',
             created_at TEXT NOT NULL,
@@ -167,7 +167,7 @@ fn read_selected_model() -> String {
         }
     }
     // 3. Default
-    "qwen2.5:3b".to_string()
+    "qwen3:8b".to_string()
 }
 
 fn cleanup_legacy_spaces(conn: &Connection) -> Result<(), String> {

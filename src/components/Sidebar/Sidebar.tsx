@@ -26,6 +26,8 @@ export function Sidebar({
   const [showNewSpace, setShowNewSpace] = useState(false);
   const [newSpaceName, setNewSpaceName] = useState("");
   const [newSpaceIcon, setNewSpaceIcon] = useState("🧠");
+  const [models, setModels] = useState<string[]>([]);
+  const [newSpaceModel, setNewSpaceModel] = useState("");
   const [renamingChatId, setRenamingChatId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const renameInputRef = useRef<HTMLInputElement>(null);
@@ -39,6 +41,29 @@ export function Sidebar({
         setActiveSpace(list[0].id);
       }
     }
+  };
+
+  const loadModels = async () => {
+    try {
+      const list = await api.listModels();
+      setModels(list);
+      setNewSpaceModel(list[0] ?? "qwen3:8b");
+    } catch {
+      setModels([]);
+      setNewSpaceModel("qwen3:8b");
+    }
+  };
+
+  const toggleNewSpace = () => {
+    setShowNewSpace((v) => {
+      if (!v) {
+        setNewSpaceName("");
+        setNewSpaceIcon("🧠");
+        setNewSpaceModel("");
+        loadModels();
+      }
+      return !v;
+    });
   };
 
   useEffect(() => {
@@ -65,11 +90,11 @@ export function Sidebar({
     const space = await api.createSpace({
       name: newSpaceName.trim(),
       icon: newSpaceIcon,
+      model: newSpaceModel || undefined,
     });
     const updated = [...spaces, space];
     setSpaces(updated);
     setActiveSpace(space.id);
-    setNewSpaceName("");
     setShowNewSpace(false);
   };
 
@@ -128,7 +153,7 @@ export function Sidebar({
       <div className="p-3">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[11px] font-semibold tracking-widest text-zinc-500">SPACES</span>
-          <Button variant="ghost" size="sm" className="h-6 text-xs gap-1" onClick={() => setShowNewSpace((v) => !v)}>
+          <Button variant="ghost" size="sm" className="h-6 text-xs gap-1" onClick={toggleNewSpace}>
             <Plus size={12} /> New
           </Button>
         </div>
@@ -139,7 +164,7 @@ export function Sidebar({
               <input
                 value={newSpaceIcon}
                 onChange={(e) => setNewSpaceIcon(e.target.value)}
-                className="w-10 h-9 text-center bg-zinc-800 border border-zinc-700 rounded-lg text-sm outline-none focus:border-zinc-600"
+                className="w-10 h-9 text-center bg-zinc-800 border border-zinc-700 rounded-lg text-sm outline-none focus:border-zinc-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.12)] transition-colors hover:border-zinc-600"
                 maxLength={2}
               />
               <input
@@ -148,14 +173,24 @@ export function Sidebar({
                 onKeyDown={(e) => e.key === "Enter" && handleCreateSpace()}
                 placeholder="Name, e.g. Research"
                 autoFocus
-                className="flex-1 h-9 px-3 bg-zinc-800 border border-zinc-700 rounded-lg text-sm outline-none focus:border-zinc-600 placeholder:text-zinc-500"
+                className="flex-1 h-9 px-3 bg-zinc-800 border border-zinc-700 rounded-lg text-sm outline-none focus:border-zinc-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.12)] placeholder:text-zinc-500 transition-colors hover:border-zinc-600"
               />
             </div>
+            <select
+              value={newSpaceModel}
+              onChange={(e) => setNewSpaceModel(e.target.value)}
+              className="w-full h-9 px-3 bg-zinc-800 border border-zinc-700 rounded-lg text-sm outline-none focus:border-zinc-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.12)] transition-colors hover:border-zinc-600 cursor-pointer"
+            >
+              {models.length === 0 && <option value="">Loading models...</option>}
+              {models.map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
             <div className="flex gap-2 justify-end">
               <Button variant="ghost" size="sm" onClick={() => setShowNewSpace(false)} className="gap-1">
                 <X size={12} /> Cancel
               </Button>
-              <Button size="sm" onClick={handleCreateSpace} disabled={!newSpaceName.trim()} className="gap-1">
+              <Button size="sm" onClick={handleCreateSpace} disabled={!newSpaceName.trim() || !newSpaceModel} className="gap-1">
                 <Check size={12} /> Create
               </Button>
             </div>
@@ -168,10 +203,10 @@ export function Sidebar({
               key={s.id}
               onClick={() => setActiveSpace(s.id)}
               className={cn(
-                "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-colors text-left cursor-pointer group",
+                "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all duration-150 text-left cursor-pointer group",
                 activeSpaceId === s.id
-                  ? "bg-zinc-800 text-white"
-                  : "text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200"
+                  ? "bg-zinc-800 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]"
+                  : "text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200 active:bg-zinc-800/80"
               )}
             >
               <span className="text-base leading-none">{s.icon}</span>
@@ -195,7 +230,7 @@ export function Sidebar({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search chats..."
-                className="flex-1 h-9 px-3 bg-zinc-900 border border-zinc-700 rounded-lg text-sm outline-none focus:border-zinc-500 placeholder:text-zinc-600"
+                className="flex-1 h-9 px-3 bg-zinc-900 border border-zinc-700 rounded-lg text-sm outline-none focus:border-zinc-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.12)] placeholder:text-zinc-600 transition-colors hover:border-zinc-600"
                 maxLength={50}
               />
             </div>
@@ -236,7 +271,7 @@ export function Sidebar({
                         if (e.key === "Escape") cancelRename();
                       }}
                       onBlur={commitRename}
-                      className="flex-1 min-w-0 bg-zinc-900 border border-zinc-600 rounded px-2 py-0.5 text-sm text-white outline-none"
+                      className="flex-1 min-w-0 bg-zinc-900 border border-zinc-600 rounded px-2 py-0.5 text-sm text-white outline-none focus:border-violet-500 focus:shadow-[0_0_0_2px_rgba(139,92,246,0.15)] transition-colors"
                       maxLength={100}
                     />
                   </div>
@@ -244,8 +279,8 @@ export function Sidebar({
                   <button
                     onClick={() => setActiveChat(c.id)}
                     className={cn(
-                      "w-full flex items-center gap-2 px-2.5 py-2.5 rounded-lg text-sm text-left group",
-                      activeChatId === c.id ? "bg-zinc-800 text-white" : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+                      "w-full flex items-center gap-2 px-2.5 py-2.5 rounded-lg text-sm text-left group transition-colors duration-150",
+                      activeChatId === c.id ? "bg-zinc-800 text-white" : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200 active:bg-zinc-900"
                     )}
                   >
                     <MessageSquare size={14} className="shrink-0 opacity-60" />

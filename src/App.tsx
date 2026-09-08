@@ -41,12 +41,12 @@ function App() {
       }
 
       setSetupStep("checking_model");
-      setSetupProgress("Checking qwen2.5:3b model...");
-      const modelExists = await api.checkModelExists("qwen2.5:3b");
+      setSetupProgress("Checking qwen3:8b model...");
+      const modelExists = await api.checkModelExists("qwen3:8b");
       if (!modelExists) {
         setSetupStep("installing_model");
-        setSetupProgress("Model not found. Installing qwen2.5:3b (1.8GB)...");
-        const result = await api.installModel("qwen2.5:3b");
+        setSetupProgress("Model not found. Installing qwen3:8b (5.0GB)...");
+        const result = await api.installModel("qwen3:8b");
         if (result.includes("failed") || result.includes("error")) {
           throw new Error("Model download failed or timed out");
         }
@@ -54,7 +54,7 @@ function App() {
 
       setSetupStep("verifying");
       setSetupProgress("Verifying installation...");
-      const modelReady = await api.checkModelExists("qwen2.5:3b");
+      const modelReady = await api.checkModelExists("qwen3:8b");
       if (!modelReady) throw new Error("Model verification failed");
 
       setSetupStep("complete");
@@ -110,7 +110,7 @@ function App() {
   // Main app UI
   if (!firstRun) {
     return (
-      <div className="h-screen w-screen flex bg-[#0a0a0a] text-zinc-100 overflow-hidden select-none">
+      <div className="h-screen w-screen flex bg-[#0a0a0a] text-zinc-100 overflow-hidden">
         <Sidebar
           onToggleMemories={() => setMemoriesOpen(!memoriesOpen)}
           memoriesOpen={memoriesOpen}
@@ -133,7 +133,7 @@ function App() {
     setupStep === "complete" ? 100 : 0;
 
   return (
-    <div className="h-screen w-screen flex bg-[#0a0a0a] text-zinc-100 overflow-hidden select-none">
+    <div className="h-screen w-screen flex bg-[#0a0a0a] text-zinc-100 overflow-hidden">
       {/* Setup overlay */}
       <div className="absolute inset-0 z-50 flex items-center justify-center p-8 bg-[#0a0a0a]/95">
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 max-w-md w-full">
@@ -165,7 +165,7 @@ function App() {
               const labels: Record<string, string> = {
                 checking_ollama: "Checking Ollama",
                 starting_ollama: "Starting Ollama",
-                checking_model: "Checking qwen2.5:3b",
+                checking_model: "Checking qwen3:8b",
                 installing_model: "Installing model",
                 verifying: "Verifying",
               };
@@ -206,7 +206,7 @@ function App() {
           {setupError && (
             <button
               onClick={handleRetry}
-              className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+              className="btn-press w-full py-2 bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white rounded-lg text-sm font-medium transition-colors shadow-[0_0_0_0_rgba(139,92,246,0)] hover:shadow-[0_0_16px_rgba(139,92,246,0.25)]"
             >
               Retry
             </button>
@@ -216,7 +216,7 @@ function App() {
           {setupStep === "complete" && !setupError && (
             <button
               onClick={() => setFirstRun(false)}
-              className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+              className="btn-press w-full py-2 bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white rounded-lg text-sm font-medium transition-colors shadow-[0_0_0_0_rgba(139,92,246,0)] hover:shadow-[0_0_16px_rgba(139,92,246,0.25)]"
             >
               Enter NewEra
             </button>
@@ -226,7 +226,7 @@ function App() {
           {!setupError && setupStep !== "complete" && (
             <button
               onClick={() => setFirstRun(false)}
-              className="w-full mt-2 py-2 text-zinc-400 hover:text-zinc-300 text-sm transition-colors"
+              className="btn-press w-full mt-2 py-2 text-zinc-400 hover:text-zinc-300 active:text-zinc-200 text-sm transition-colors"
             >
               Skip setup
             </button>

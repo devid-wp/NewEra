@@ -6,7 +6,7 @@ describe("Prompt Builder Logic", () => {
     name: "Test",
     icon: "test",
     system_prompt: "You are a helpful assistant.",
-    model: "qwen2.5:3b",
+    model: "qwen3:8b",
     temperature: 0.7,
     provider: "ollama",
     created_at: "2024-01-01",

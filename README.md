@@ -41,7 +41,7 @@ npm install
 cargo tauri dev      # dev with hot-reload
 npm run build        # frontend build
 cargo tauri build    # release .deb/.AppImage/.exe
-ollama serve & ollama pull qwen2.5:3b
+ollama serve & ollama pull qwen3:8b
 ```
 
 Architecture: see [ARCHITECTURE.md](ARCHITECTURE.md) v0.2 + [ROADMAP.md](ROADMAP.md)
@@ -99,7 +99,7 @@ npm install
 
 # 3. Start Ollama and pull a model:
 ollama serve
-ollama pull qwen2.5:3b
+ollama pull qwen3:8b
 
 # 4. Start development mode:
 cargo tauri dev
@@ -117,7 +117,7 @@ cargo tauri build
 ## Development
 
 1. Start Ollama: `ollama serve`
-2. Pull a model: `ollama pull qwen2.5:3b`
+2. Pull a model: `ollama pull qwen3:8b`
 3. Verify it's running: `curl http://localhost:11434/api/tags`
 4. Start development: `cargo tauri dev`
 5. Build: `cargo tauri build`
