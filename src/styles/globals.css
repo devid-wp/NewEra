@@ -8,17 +8,18 @@
     --foreground: 0 0% 98%;
     --card: 0 0% 8%;
     --card-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
+    /* Default interactive surface — dark, never white */
+    --primary: 263 70% 50%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 14%;
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 14%;
     --muted-foreground: 0 0% 63%;
-    --accent: 0 0% 14%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 262 70% 55%;
+    --accent-foreground: 0 0% 100%;
     --border: 0 0% 14%;
     --input: 0 0% 14%;
-    --ring: 0 0% 83%;
+    --ring: 262 70% 55%;
     --radius: 0.75rem;
   }
 }
@@ -31,6 +32,13 @@
     @apply bg-[#0a0a0a] text-foreground antialiased;
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
   }
+
+  /* Consistent custom selection color — dark/purple, subtle */
+  ::selection {
+    background: rgba(139, 92, 246, 0.28);
+    color: #fff;
+  }
+
   /* Scrollbar dark */
   ::-webkit-scrollbar {
     width: 6px;
@@ -41,6 +49,229 @@
   }
   ::-webkit-scrollbar-track {
     @apply bg-transparent;
+  }
+}
+
+@layer base {
+  /* ---------------------------------------------------------------
+     Global interactive controls — NewEra dark visual language.
+     No browser-default white/focused states anywhere.
+     --------------------------------------------------------------- */
+
+  :where(button, [role="button"]) {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Text fields: dark surfaces, never white */
+  input,
+  select,
+  textarea {
+    @apply bg-zinc-900 text-zinc-100 border border-zinc-700 rounded-lg text-sm;
+    color-scheme: dark;
+    transition: background-color 0.15s ease, border-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+
+  input:hover:not(:disabled),
+  select:hover:not(:disabled),
+  textarea:hover:not(:disabled) {
+    border-color: #52525b;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+    border-color: hsl(262 70% 55%);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
+  }
+
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  /* Option / dropdown menu — dark on every platform (where supported) */
+  select option {
+    @apply bg-zinc-900 text-zinc-100;
+  }
+
+  select:focus option:checked,
+  select option:checked {
+    background-color: #27272a;
+  }
+
+  /* Buttons: near-black surface + restrained purple on interactive states.
+     NEVER white. */
+  button {
+    @apply transition-colors duration-150;
+  }
+  button:focus-visible {
+    outline: 2px solid hsl(262 70% 55%);
+    outline-offset: 2px;
+  }
+  button:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  textarea {
+    line-height: 1.5;
+  }
+}
+
+@layer components {
+  /* Full-surface interactive field used by many inputs */
+  .nr-input {
+    @apply w-full bg-zinc-900 border border-zinc-700 rounded-lg text-sm text-zinc-100 px-3 py-2 outline-none placeholder:text-zinc-600 transition-colors duration-150;
+  }
+  .nr-input:hover:not(:disabled) {
+    @apply border-zinc-600;
+  }
+  .nr-input:focus {
+    @apply border-zinc-500;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+  }
+}
+
+/* --- Streaming AI response animations --- */
+
+/* Typing indicator dots */
+@keyframes nr-dot-bounce {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  40% {
+    transform: translateY(-5px);
+    opacity: 1;
+  }
+}
+
+.nr-dots span {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin: 0 2px;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: nr-dot-bounce 1.2s infinite ease-in-out;
+}
+.nr-dots span:nth-child(1) { animation-delay: -0.32s; }
+.nr-dots span:nth-child(2) { animation-delay: -0.16s; }
+.nr-dots span:nth-child(3) { animation-delay: 0s; }
+
+/* Blinking cursor for the live streaming text */
+@keyframes nr-caret-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.nr-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  border-radius: 1px;
+  background: color-mix(in srgb, currentColor 70%, transparent);
+  animation: nr-caret-blink 0.85s step-end infinite;
+}
+
+/* Shimmer sweep on the "thinking" panel */
+@keyframes nr-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.nr-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(59, 130, 246, 0.08) 25%,
+    rgba(147, 197, 253, 0.22) 50%,
+    rgba(59, 130, 246, 0.08) 75%
+  );
+  background-size: 200% 100%;
+  animation: nr-shimmer 2.4s linear infinite;
+}
+
+/* Gentle glow pulse for the streaming panel border */
+@keyframes nr-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.0); }
+  50% { box-shadow: 0 0 18px 1px rgba(59, 130, 246, 0.18); }
+}
+.nr-glow {
+  animation: nr-glow 2s ease-in-out infinite;
+}
+
+/* Fade-in for completed messages */
+@keyframes nr-fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.nr-fade-up {
+  animation: nr-fade-up 0.28s ease-out;
+}
+
+/* --- UI polish animations --- */
+
+/* Modal / dialog entrance */
+@keyframes nr-modal-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.nr-modal-in {
+  animation: nr-modal-in 0.2s ease-out;
+}
+
+/* Backdrop fade */
+@keyframes nr-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.nr-backdrop-in {
+  animation: nr-backdrop-in 0.18s ease-out;
+}
+
+/* Panel (sidebar panels like Memory / dialogs) slide-in */
+@keyframes nr-panel-in {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.nr-panel-in {
+  animation: nr-panel-in 0.22s ease-out;
+}
+
+/* Checkbox/status pop */
+@keyframes nr-pop-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.nr-pop-in {
+  animation: nr-pop-in 0.15s ease-out;
+}
+
+/* Simpler, button press feedback */
+.btn-press {
+  transition: transform 0.06s ease, background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.btn-press:active:not(:disabled) {
+  transform: translateY(0.5px) scale(0.98);
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nr-caret {
+    animation: none !important;
   }
 }
 

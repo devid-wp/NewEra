@@ -61,7 +61,7 @@ export function MemoryEditor({ onClose }: { onClose: () => void }) {
 
   if (!activeSpaceId) {
     return (
-      <div className="w-[340px] shrink-0 h-screen bg-[#0f0f0f] border-l border-zinc-800 flex flex-col">
+      <div className="w-[340px] shrink-0 h-screen bg-[#0f0f0f] border-l border-zinc-800 flex flex-col nr-panel-in">
         <Header name="Memory" onClose={onClose} />
         <div className="flex-1 grid place-items-center text-zinc-600 text-sm p-8 text-center">
           Select a Space to view its memory
@@ -71,7 +71,7 @@ export function MemoryEditor({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="w-[340px] shrink-0 h-screen bg-[#0f0f0f] border-l border-zinc-800 flex flex-col">
+    <div className="w-[340px] shrink-0 h-screen bg-[#0f0f0f] border-l border-zinc-800 flex flex-col nr-panel-in">
       <Header name="Memory" onClose={onClose} />
 
       <div className="px-4 py-3 border-b border-zinc-800/60">
@@ -129,7 +129,7 @@ export function MemoryEditor({ onClose }: { onClose: () => void }) {
               placeholder="e.g. Prefers concise answers with code examples"
               rows={3}
               autoFocus
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-2.5 text-sm outline-none focus:border-zinc-500 placeholder:text-zinc-600 resize-none"
+              className="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-2.5 text-sm text-zinc-100 outline-none focus:border-zinc-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.15)] placeholder:text-zinc-600 resize-none transition-colors hover:border-zinc-600"
             />
             <div className="flex flex-wrap gap-1.5">
               {CATEGORIES.map((c) => (
@@ -137,10 +137,10 @@ export function MemoryEditor({ onClose }: { onClose: () => void }) {
                   key={c}
                   onClick={() => setCategory(c)}
                   className={cn(
-                    "text-[11px] px-2 py-1 rounded-full border transition-colors",
+                    "btn-press text-[11px] px-2 py-1 rounded-full border transition-colors",
                     category === c
-                      ? "bg-zinc-200 text-zinc-900 border-zinc-200"
-                      : "bg-zinc-900 text-zinc-400 border-zinc-700 hover:text-zinc-200"
+                      ? "bg-violet-600/90 text-white border-violet-500/50"
+                      : "bg-zinc-900 text-zinc-400 border-zinc-700 hover:bg-zinc-800 hover:text-zinc-200 hover:border-zinc-600 active:bg-zinc-900"
                   )}
                 >
                   {c}
@@ -170,7 +170,11 @@ function Header({ name, onClose }: { name: string; onClose: () => void }) {
   return (
     <div className="h-[56px] shrink-0 flex items-center justify-between px-4 border-b border-zinc-800">
       <span className="text-sm font-semibold text-zinc-100">{name}</span>
-      <button onClick={onClose} className="text-zinc-500 hover:text-zinc-200 p-1">
+      <button
+        onClick={onClose}
+        className="btn-press text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 active:bg-zinc-800/80 p-1.5 rounded-md transition-colors"
+        aria-label="Close memory"
+      >
         <X size={16} />
       </button>
     </div>

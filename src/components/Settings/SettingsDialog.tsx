@@ -64,14 +64,18 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 grid place-items-center" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/60 grid place-items-center nr-backdrop-in" onClick={onClose}>
       <div
-        className="w-[520px] max-h-[85vh] overflow-y-auto bg-[#0f0f0f] border border-zinc-800 rounded-2xl p-6 space-y-6"
+        className="w-[520px] max-h-[85vh] overflow-y-auto bg-[#0f0f0f] border border-zinc-800 rounded-2xl p-6 space-y-6 nr-modal-in"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Settings</h2>
-          <button onClick={onClose} className="text-zinc-500 hover:text-zinc-200 p-1">
+          <button
+            onClick={onClose}
+            className="btn-press text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 active:bg-zinc-800/80 p-1.5 rounded-md transition-colors"
+            aria-label="Close settings"
+          >
             <X size={18} />
           </button>
         </div>
@@ -84,13 +88,13 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
               value={ollamaUrl}
               onChange={(e) => setOllamaUrl(e.target.value)}
               placeholder="http://localhost:11434"
-              className="flex-1 h-9 px-3 bg-zinc-900 border border-zinc-700 rounded-lg text-sm outline-none focus:border-zinc-500 placeholder:text-zinc-600"
+              className="flex-1 h-9 px-3 bg-zinc-900 border border-zinc-700 rounded-lg text-sm text-zinc-100 outline-none focus:border-zinc-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.15)] placeholder:text-zinc-600 transition-colors hover:border-zinc-600"
             />
             <Button variant="secondary" size="icon" onClick={refreshOllama} disabled={refreshing} title="Refresh models">
               <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
             </Button>
           </div>
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 text-xs nr-pop-in">
             <span className={cn("w-2 h-2 rounded-full", ollamaOnline ? "bg-emerald-500" : "bg-red-500")} />
             <span className="text-zinc-500">{ollamaOnline === null ? "not checked" : ollamaOnline ? "Online" : "Offline"}</span>
             <span className="text-zinc-600">· {models.length} models</span>
@@ -108,7 +112,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
             <select
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              className="w-full h-9 px-3 bg-zinc-900 border border-zinc-700 rounded-lg text-sm outline-none focus:border-zinc-500"
+              className="w-full h-9 px-3 bg-zinc-900 border border-zinc-700 rounded-lg text-sm text-zinc-100 outline-none focus:border-zinc-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.15)] cursor-pointer"
             >
               {models.length === 0 && <option value={model}>{model || "No models found"}</option>}
               {models.map((m) => (
@@ -131,7 +135,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
               step={0.1}
               value={temperature}
               onChange={(e) => setTemperature(parseFloat(e.target.value))}
-              className="w-full accent-zinc-100"
+              className="w-full accent-violet-500"
             />
           </div>
 
@@ -141,7 +145,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
               value={systemPrompt}
               onChange={(e) => setSystemPrompt(e.target.value)}
               rows={3}
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2.5 text-sm outline-none focus:border-zinc-500 placeholder:text-zinc-600 resize-none"
+              className="w-full bg-zinc-900 border border-zinc-700 rounded-lg p-2.5 text-sm text-zinc-100 outline-none focus:border-zinc-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.15)] placeholder:text-zinc-600 resize-none transition-colors hover:border-zinc-600"
             />
           </div>
         </section>
@@ -155,10 +159,10 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
                 key={t}
                 onClick={() => setTheme(t)}
                 className={cn(
-                  "flex-1 h-9 rounded-lg border text-sm capitalize transition-colors",
+                  "btn-press flex-1 h-9 rounded-lg border text-sm capitalize transition-colors",
                   theme === t
-                    ? "bg-zinc-200 text-zinc-900 border-zinc-200"
-                    : "bg-zinc-900 text-zinc-400 border-zinc-700 hover:text-zinc-200"
+                    ? "bg-violet-600/90 text-white border-violet-500/50"
+                    : "bg-zinc-900 text-zinc-400 border-zinc-700 hover:bg-zinc-800 hover:text-zinc-200 hover:border-zinc-600 active:bg-zinc-900"
                 )}
               >
                 {t}

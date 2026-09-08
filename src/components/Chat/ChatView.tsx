@@ -180,12 +180,12 @@ export function ChatView() {
       </header>
 
       {showExport && (
-        <div className="fixed inset-0 z-10 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 max-w-lg w-full">
+        <div className="fixed inset-0 z-10 bg-black/80 flex items-center justify-center p-4 nr-backdrop-in">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 max-w-lg w-full nr-modal-in">
             <h3 className="text-lg font-semibold mb-4">Export Chat</h3>
             <textarea
               rows={10}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-sm font-mono outline-none resize-none"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3 text-sm font-mono outline-none resize-none focus:border-zinc-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.12)] select-text"
               value={exportText}
               onFocus={(e) => e.target.select()}
               readOnly
@@ -212,7 +212,7 @@ export function ChatView() {
 
       <div className="shrink-0 p-4 border-t border-zinc-800 bg-[#0a0a0a]">
         <div className="max-w-3xl mx-auto">
-          <div className="flex items-end gap-2 bg-zinc-900 border border-zinc-800 rounded-2xl p-2 focus-within:border-zinc-700 transition-colors">
+          <div className="flex items-end gap-2 bg-zinc-900 border border-zinc-800 rounded-2xl p-2 focus-within:border-zinc-600 focus-within:shadow-[0_0_0_3px_rgba(139,92,246,0.12)] transition-all duration-150">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}

@@ -15,7 +15,7 @@ function CopyButton({ code }: { code: string }) {
           setTimeout(() => setCopied(false), 1500);
         });
       }}
-      className="flex items-center gap-1 text-[11px] text-zinc-400 hover:text-zinc-200 transition-colors px-1.5 py-0.5 rounded"
+      className="btn-press flex items-center gap-1 text-[11px] text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/70 active:bg-zinc-800 transition-colors px-1.5 py-0.5 rounded"
       title="Copy code"
     >
       {copied ? <Check size={12} /> : <Copy size={12} />}
@@ -327,16 +327,16 @@ function replaceMathPlaceholders(
 export function MessageBubble({ role, content, streaming }: Props & { role: string }) {
   if (role === "user") {
     return (
-      <div className="flex justify-end">
-        <div className="max-w-[80%] bg-white text-black rounded-2xl rounded-br-sm px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words">
+      <div className="flex justify-end nr-fade-up">
+        <div className="max-w-[80%] bg-white text-black rounded-2xl rounded-br-sm px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words select-text">
           {content}
         </div>
       </div>
     );
   }
   return (
-    <div className="flex justify-start">
-      <div className="max-w-[85%] bg-zinc-900 border border-zinc-800 rounded-2xl rounded-bl-sm px-4 py-3 text-sm text-zinc-100">
+    <div className="flex justify-start nr-fade-up">
+      <div className="max-w-[85%] bg-zinc-900 border border-zinc-800 rounded-2xl rounded-bl-sm px-4 py-3 text-sm text-zinc-100 select-text">
         <Markdown content={content} streaming={streaming} />
       </div>
     </div>
