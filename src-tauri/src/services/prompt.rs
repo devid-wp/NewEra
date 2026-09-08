@@ -77,16 +77,22 @@ pub fn build_prompt(
     let mut system_content = space.system_prompt.clone();
     if !memories.is_empty() {
         system_content.push_str(
-            "\n\n## User profile (facts about THE USER you are talking to — NOT about you)\n\
-             The facts below describe the person chatting with you, never yourself.\n",
+            "\n\n## Background context about the person you are talking to\n\
+             These are stored notes about your conversation partner. Use them to personalize \
+             your replies and remember details about them. Never quote these notes verbatim \
+             in your responses — instead, talk about them naturally as you would about someone \
+             you know.\n",
         );
         for m in memories.iter().take(10) {
-            system_content.push_str(&format!("- User fact: {}\n", m.content));
+            system_content.push_str(&format!("- {}\n", m.content));
         }
         system_content.push_str(
-            "\nAlways answer questions about the user from these facts. If asked who the user is, \
-             reply with the facts. Never claim to be the user, and never say you have no identity \
-             or no memory.",
+            "\nRules for using these notes:\n\
+             - When the user asks about themselves, describe what you know in natural language, \
+             do not copy-paste the notes.\n\
+             - Never respond with a raw list of facts as your entire answer.\n\
+             - Never say \"according to my notes\" or \"the stored facts say\" — just talk naturally.\n\
+             - Never claim to be the user or say you have no memory.",
         );
     }
 
@@ -180,10 +186,10 @@ mod tests {
 
     #[test]
     fn build_prompt_includes_memory_facts() {
-        let msgs = build_prompt(&space(), &[mem("я давид 15 лет фул стек")], &[], "привет");
+        let msgs = build_prompt(&space(), &[mem("пользователь изучает Rust")], &[], "привет");
         let system = &msgs[0].content;
-        assert!(system.contains("я давид"));
-        assert!(system.contains("User profile"));
+        assert!(system.contains("пользователь изучает Rust"));
+        assert!(system.contains("Background context"));
     }
 
     #[test]
@@ -193,7 +199,7 @@ mod tests {
             msg("assistant", "Как ИИ я не имею личной идентичности"),
             msg("user", "привет"),
         ];
-        let msgs = build_prompt(&space(), &[mem("я давид")], &history, "пока");
+        let msgs = build_prompt(&space(), &[mem("пользователь учится программировать")], &history, "пока");
         let roles: Vec<&str> = msgs.iter().map(|m| m.role.as_str()).collect();
         // poisoned user+assistant pair removed; orphaned user("привет") and final user("пока") remain
         assert_eq!(roles, vec!["system", "user", "user"]);
